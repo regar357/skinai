@@ -7,8 +7,14 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "latest",
+    "dotenv": "^17.4.2",
     "express": "latest",
-    "cors": "latest"
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.22.0",
+    "path": "^0.12.7",
+    "router": "^2.2.0"
   },
   "devDependencies": {
     "nodemon": "latest"
