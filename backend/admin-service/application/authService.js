@@ -1,7 +1,7 @@
 const pool = require("../infrastructure/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Admin } = require("../domain/models/Admin");
+const { Admin } = require("../domain/Admin");
 
 const JWT_SECRET = process.env.JWT_SECRET || "1234";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "2h";

@@ -1,5 +1,5 @@
 const pool = require("../infrastructure/db");
-const { Disease } = require("../domain/models/Disease");
+const { Disease } = require("../domain/Disease");
 
 exports.listDiseases = async ({ category, keyword }) => {
   let sql =
