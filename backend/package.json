@@ -1,9 +1,0 @@
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "start": "npm --prefix api-gateway start",
-    "dev": "npm --prefix api-gateway run dev"
-  }
-}
