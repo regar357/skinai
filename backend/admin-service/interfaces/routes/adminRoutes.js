@@ -1,7 +1,8 @@
-const router = require("router");
+const express = require("express");
 const adminController = require("../controllers/adminController");
 
-// /api/admin/login
+const router = express.Router();
 router.post("/login", adminController.adminLogin);
-// /api/admin/logout
 router.post("/logout", adminController.adminLogout);
+
+module.exports = router;

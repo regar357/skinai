@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   frontend:
@@ -13,12 +13,35 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./backend/api-gateway
       dockerfile: ../docker/Dockerfile.backend
     ports:
       - "3001:3001"
     volumes:
-      - ./backend:/app
+      - ./backend/api-gateway:/app
+      - /app/node_modules
+    depends_on:
+      - admin-service
+      - encyclopedia-service
+
+  admin-service:
+    build:
+      context: ./backend/admin-service
+      dockerfile: ../docker/Dockerfile.backend
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./backend/admin-service:/app
+      - /app/node_modules
+
+  encyclopedia-service:
+    build:
+      context: ./backend/encyclopedia-service
+      dockerfile: ../docker/Dockerfile.backend
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./backend/encyclopedia-service:/app
       - /app/node_modules
 
   ai:
