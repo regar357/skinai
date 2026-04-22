@@ -13,31 +13,17 @@ const encyclopediaTarget =
 app.use(cors());
 app.use(express.json());
 
-// /api/admin/diseases/**  백과사전 생성, 수정 서비스 (임시 포트 3003)
 app.use(
-  "/api/admin/diseases",
+  "/api/v1/encyclopedia",
   createProxyMiddleware({
     target: encyclopediaTarget,
     changeOrigin: true,
     pathRewrite: {
-      "^/api/admin/diseases": "/api/admin/diseases",
+      "^/api/v1/encyclopedia": "/api/v1/encyclopedia",
     },
   }),
 );
 
-// /api/diseases/**  백과사전 서비스 (임시 포트 3003)
-app.use(
-  "/api/diseases",
-  createProxyMiddleware({
-    target: encyclopediaTarget,
-    changeOrigin: true,
-    pathRewrite: {
-      "^/api/diseases": "/api/diseases",
-    },
-  }),
-);
-
-// /api/admin/**  어드민 서비스 (임시 포트 3002)
 app.use(
   "/api/admin",
   createProxyMiddleware({

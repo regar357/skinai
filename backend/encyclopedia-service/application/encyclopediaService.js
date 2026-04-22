@@ -1,127 +1,73 @@
-const pool = require("../infrastructure/db");
-const { Disease } = require("../domain/Disease");
+const pool = require("../infrastructure/db/mysql");
+const { Article } = require("../domain/Article");
 
-exports.listDiseases = async ({ category, keyword }) => {
-  let sql =
-    "SELECT disease_id, name, category, image_url FROM disease_encyclopedia";
+exports.listArticles = async ({ page, limit, category, search }) => {
+  const normalizedPage = Math.max(Number(page) || 1, 1);
+  const normalizedLimit = Math.max(Math.min(Number(limit) || 10, 100), 1);
+  const offset = (normalizedPage - 1) * normalizedLimit;
+
+  const conditions = ["is_active = TRUE"];
   const params = [];
 
-  if (category && keyword) {
-    sql +=
-      " WHERE category = ? AND (name LIKE ? OR description LIKE ? OR content LIKE ?)";
-    params.push(category, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
-  } else if (category) {
-    sql += " WHERE category = ?";
+  if (category) {
+    conditions.push("category = ?");
     params.push(category);
-  } else if (keyword) {
-    sql += " WHERE name LIKE ? OR description LIKE ? OR content LIKE ?";
-    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
   }
 
-  const [rows] = await pool.execute(sql, params);
-  return rows.map((row) => new Disease(row));
-};
+  if (search) {
+    conditions.push("(title LIKE ? OR content LIKE ?)");
+    params.push(`%${search}%`, `%${search}%`);
+  }
 
-exports.getDiseaseById = async (diseaseId) => {
+  const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
   const [rows] = await pool.execute(
-    `SELECT disease_id, name, category, description, symptoms, treatment, image_url, created_at, updated_at
-     FROM disease_encyclopedia
-     WHERE disease_id = ?`,
-    [diseaseId],
+    `
+      SELECT article_id, title, content, category, icon, icon_bg, icon_color, created_at, updated_at
+      FROM encyclopedia_articles
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `,
+    [...params, normalizedLimit, offset],
   );
 
-  return rows[0] ? new Disease(rows[0]) : null;
-};
-
-exports.createDisease = async (payload) => {
-  const { name, category, description, symptoms, treatment, image_url } =
-    payload;
-  if (!name || !category || !description) {
-    const error = new Error("name, category, description 항목은 필수입니다.");
-    error.status = 400;
-    throw error;
-  }
-
-  const [result] = await pool.execute(
-    `INSERT INTO disease_encyclopedia
-     (name, category, description, symptoms, treatment, image_url, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-    [
-      name,
-      category,
-      description,
-      symptoms || null,
-      treatment || null,
-      image_url || null,
-    ],
-  );
-
-  return new Disease({
-    disease_id: result.insertId,
-    name,
-    category,
-    description,
-    symptoms: symptoms || null,
-    treatment: treatment || null,
-    image_url: image_url || null,
-  });
-};
-
-exports.updateDisease = async (diseaseId, payload) => {
-  const { name, category, description, symptoms, treatment, image_url } =
-    payload;
-  if (
-    !name &&
-    !category &&
-    !description &&
-    !symptoms &&
-    !treatment &&
-    !image_url
-  ) {
-    const error = new Error("수정할 데이터를 하나 이상 입력해야 합니다.");
-    error.status = 400;
-    throw error;
-  }
-
-  const fields = [];
-  const params = [];
-
-  if (name !== undefined) {
-    fields.push("name = ?");
-    params.push(name);
-  }
-  if (category !== undefined) {
-    fields.push("category = ?");
-    params.push(category);
-  }
-  if (description !== undefined) {
-    fields.push("description = ?");
-    params.push(description);
-  }
-  if (symptoms !== undefined) {
-    fields.push("symptoms = ?");
-    params.push(symptoms);
-  }
-  if (treatment !== undefined) {
-    fields.push("treatment = ?");
-    params.push(treatment);
-  }
-  if (image_url !== undefined) {
-    fields.push("image_url = ?");
-    params.push(image_url);
-  }
-
-  if (fields.length === 0) {
-    const error = new Error("업데이트할 필드를 하나 이상 지정해야 합니다.");
-    error.status = 400;
-    throw error;
-  }
-
-  params.push(diseaseId);
-  await pool.execute(
-    `UPDATE disease_encyclopedia SET ${fields.join(", ")} , updated_at = NOW() WHERE disease_id = ?`,
+  const [countRows] = await pool.execute(
+    `
+      SELECT COUNT(*) AS totalItems
+      FROM encyclopedia_articles
+      ${whereClause}
+    `,
     params,
   );
 
-  return exports.getDiseaseById(diseaseId);
+  const totalItems = countRows[0].totalItems;
+
+  return {
+    items: rows.map((row) => Article.fromRow(row).toListItem()),
+    pagination: {
+      currentPage: normalizedPage,
+      totalPages: Math.max(Math.ceil(totalItems / normalizedLimit), 1),
+      totalItems,
+      itemsPerPage: normalizedLimit,
+    },
+  };
+};
+
+exports.getArticleById = async (articleId) => {
+  const [rows] = await pool.execute(
+    `
+      SELECT article_id, title, content, category, icon, icon_bg, icon_color, related_articles, created_at, updated_at
+      FROM encyclopedia_articles
+      WHERE article_id = ? AND is_active = TRUE
+      LIMIT 1
+    `,
+    [articleId],
+  );
+
+  if (!rows[0]) {
+    return null;
+  }
+
+  return Article.fromRow(rows[0]).toDetail();
 };

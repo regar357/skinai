@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+
 const encyclopediaRoutes = require("./interfaces/routes/encyclopediaRoutes");
 
 const app = express();
@@ -13,13 +14,15 @@ app.get("/health", (req, res) => {
   res.json({ success: true, service: "encyclopedia-service" });
 });
 
-app.use("/api/diseases", encyclopediaRoutes.diseasesRouter);
-app.use("/api/admin/diseases", encyclopediaRoutes.adminDiseasesRouter);
+app.use("/api/v1/encyclopedia", encyclopediaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: "Encyclopedia service route not found",
+    error: {
+      code: "NOT_FOUND",
+      message: "Encyclopedia service route not found",
+    },
   });
 });
 

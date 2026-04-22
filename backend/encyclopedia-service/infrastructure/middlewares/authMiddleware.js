@@ -1,11 +1,13 @@
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SECRET || "1234";
+const JWT_SECRET = process.env.JWT_SECRET || "graduation-project-secret";
 
 const extractToken = (req) => {
   const authHeader =
     req.headers.authorization || req.body.token || req.query.token;
-  if (!authHeader || typeof authHeader !== "string") return null;
+  if (!authHeader || typeof authHeader !== "string") {
+    return null;
+  }
   if (authHeader.startsWith("Bearer ")) {
     return authHeader.slice(7).trim();
   }
@@ -14,20 +16,28 @@ const extractToken = (req) => {
 
 exports.requireAuth = (req, res, next) => {
   const token = extractToken(req);
+
   if (!token) {
     return res.status(401).json({
       success: false,
-      message: "JWT 토큰이 필요합니다.",
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Bearer token is required.",
+      },
     });
   }
 
   try {
-    jwt.verify(token, JWT_SECRET);
-    next();
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = payload;
+    return next();
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "유효하지 않은 JWT 토큰입니다.",
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Invalid or expired token.",
+      },
     });
   }
 };

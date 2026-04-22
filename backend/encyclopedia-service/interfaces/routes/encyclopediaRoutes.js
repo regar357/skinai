@@ -1,24 +1,12 @@
 const express = require("express");
+
 const encyclopediaController = require("../controllers/encyclopediaController");
-const { requireAuth } = require("../middleware/authMiddleware");
+const { requireAuth } = require("../../infrastructure/middlewares/authMiddleware");
 
-const diseasesRouter = express.Router();
-diseasesRouter.get("/", encyclopediaController.getDiseases);
-diseasesRouter.get("/:disease_id", encyclopediaController.getDiseaseById);
+const router = express.Router();
 
-const adminDiseasesRouter = express.Router();
-adminDiseasesRouter.post(
-  "/",
-  requireAuth,
-  encyclopediaController.createDisease,
-);
-adminDiseasesRouter.put(
-  "/:disease_id",
-  requireAuth,
-  encyclopediaController.updateDisease,
-);
+router.use(requireAuth);
+router.get("/", encyclopediaController.getArticles);
+router.get("/:id", encyclopediaController.getArticleById);
 
-module.exports = {
-  diseasesRouter,
-  adminDiseasesRouter,
-};
+module.exports = router;
