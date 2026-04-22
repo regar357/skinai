@@ -9,9 +9,3 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "Hello from FastAPI AI Server"}
-
-# Example endpoint for YOLO inference
-# @app.post("/predict")
-# async def predict(image: UploadFile = File(...)):
-#     # Implement prediction logic here
-#     pass
