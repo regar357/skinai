@@ -8,8 +8,6 @@ import {
   ScanFace,
   BookOpen,
   MapPin,
-  AArrowUp,
-  AArrowDown,
   Camera,
 } from "lucide-react"
 import { SkinLogo } from "@/components/skin-logo"
@@ -20,6 +18,7 @@ import { ResultPage } from "@/components/result-page"
 import { EncyclopediaPage } from "@/components/encyclopedia-page"
 import { HospitalFinderPage } from "@/components/hospital-finder-page"
 import { AuthPage } from "@/components/auth-page"
+import { authService } from "@/lib/api-services"
 
 /* ========== Font Size Context ========== */
 type FontSize = "small" | "medium" | "large"
@@ -50,8 +49,9 @@ type TabId = "history" | "profile" | "home" | "encyclopedia" | "hospital"
 
 interface ResultData {
   imagePreview: string
-  gender: string
-  age: string
+  diagnosisId?: number
+  suspectedDisease?: string
+  probability?: number
 }
 
 interface UserData {
@@ -80,7 +80,12 @@ export function SkinAIApp() {
     setIsLoggedIn(true)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+    } catch {
+      // API 미연결/실패 시에도 로컬 세션은 종료한다.
+    }
     setIsLoggedIn(false)
     setUser({ name: "", email: "" })
     setActiveTab("home")
@@ -131,10 +136,10 @@ export function SkinAIApp() {
       }}
     >
       <div
-        className={`relative z-10 flex min-h-svh flex-col items-center px-4 pb-28 pt-2 font-sans ${fontSizeBodyMap[fontSize]}`}
+        className={`relative z-10 flex min-h-svh flex-col items-center px-4 pb-28 font-sans ${fontSizeBodyMap[fontSize]} ${!showResult && activeTab === "home" ? "pt-8" : "pt-2"}`}
       >
         {/* ===== Top Bar ===== */}
-        <header className="mb-4 flex w-full max-w-[400px] items-center">
+        <header className={`flex w-full max-w-[400px] items-center ${!showResult && activeTab === "home" ? "mb-4" : "mb-4"}`}>
           {!showResult && activeTab === "home" ? (
             // Home page: centered logo
             <div className="flex-1 flex justify-center">
