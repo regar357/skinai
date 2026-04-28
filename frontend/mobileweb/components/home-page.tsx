@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { Sparkles, Loader2, Camera, UploadCloud, X, User2, Calendar } from "lucide-react"
+import { Sparkles, Loader2, UploadCloud, X } from "lucide-react"
+import { diagnosisService } from "@/lib/api-services"
 
 interface Ripple {
   id: number
@@ -10,13 +11,17 @@ interface Ripple {
 }
 
 interface HomePageProps {
-  onAnalysisComplete?: (data: { imagePreview: string; gender: string; age: string }) => void
+  onAnalysisComplete?: (data: {
+    imagePreview: string
+    diagnosisId?: number
+    suspectedDisease?: string
+    probability?: number
+  }) => void
 }
 
 export function HomePage({ onAnalysisComplete }: HomePageProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [gender, setGender] = useState("")
-  const [age, setAge] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showScanIndicator, setShowScanIndicator] = useState(false)
   const [ripples, setRipples] = useState<Ripple[]>([])
@@ -26,6 +31,7 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      setSelectedFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)
@@ -36,10 +42,11 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
 
   const handleImageRemove = () => {
     setImagePreview(null)
+    setSelectedFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  const isReady = !!imagePreview && !!gender && !!age
+  const isReady = !!imagePreview
 
   const spawnRipple = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     if (!btnRef.current) return
@@ -53,18 +60,36 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== ripple.id)), 700)
   }, [])
 
-  const handleAnalyze = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleAnalyze = async (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!isReady || isLoading) return
     spawnRipple(e)
     setIsLoading(true)
     setShowScanIndicator(true)
-    setTimeout(() => {
+
+    try {
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append("image", selectedFile)
+        const diagnosis = await diagnosisService.analyzeImage(formData)
+        if (imagePreview) {
+          onAnalysisComplete?.({
+            imagePreview,
+            diagnosisId: diagnosis.diagnosisId,
+            suspectedDisease: diagnosis.result?.suspectedDisease,
+            probability: diagnosis.result?.probability,
+          })
+        }
+        return
+      }
+    } catch {
+      // API 미연결 시에도 결과 화면 동선을 유지한다.
+    } finally {
       setIsLoading(false)
       setShowScanIndicator(false)
-      if (imagePreview && gender && age) {
-        onAnalysisComplete?.({ imagePreview, gender, age })
+      if (imagePreview) {
+        onAnalysisComplete?.({ imagePreview })
       }
-    }, 2500)
+    }
   }
 
   return (
@@ -119,41 +144,6 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
             </div>
           )}
 
-          {/* User info row */}
-          <div className="flex gap-4">
-            {/* Gender select */}
-            <div className="flex-1">
-              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <User2 className="h-4 w-4" />
-                성별
-              </label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white/80 px-3 py-3 text-base font-medium text-foreground focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
-              >
-                <option value="">선택</option>
-                <option value="male">남성</option>
-                <option value="female">여성</option>
-              </select>
-            </div>
-            {/* Age input */}
-            <div className="flex-1">
-              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                나이
-              </label>
-              <input
-                type="number"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="예: 25"
-                min={1}
-                max={120}
-                className="w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-3 text-base font-medium text-foreground placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
-              />
-            </div>
-          </div>
 
           {/* Submit button with ripple */}
           <button
