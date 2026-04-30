@@ -78,6 +78,7 @@ Thumbs.db
 
 # Docker
 .dockerignore
+backend/
 
 # AI models (if any)
 *.pt
