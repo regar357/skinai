@@ -1,1 +1,145 @@
-공지사항, 피부백과 마이크로서비스 작성
+# Content-Service 설계서
+
+## 1. 개요
+
+Content-Service는 공지사항과 피부백과 콘텐츠를 관리하는 마이크로서비스입니다. 구현 범위는 `backend/content-service` 폴더 내부로 한정하며, 다른 마이크로서비스나 상위 API 게이트웨이는 여기서 구현하지 않습니다.
+
+## 2. 아키텍처
+
+서비스는 클린 아키텍처 원칙을 따릅니다:
+
+- `domain`: 데이터 모델(엔티티), 리포지토리 인터페이스 선언
+- `application`: 비즈니스 로직 구현
+- `infrastructure`: MySQL 데이터베이스 연결, DB 설정, DB 스키마(`src/infrastructure/schema.sql`), 리포지토리 구현, 미들웨어
+- `interface`: Express 라우터와 컨트롤러 구현
+
+> 사용자 토큰 검증은 API 게이트웨이에서 처리합니다. `content-service` 내부에서는 인증/인가 검증을 수행하지 않습니다.
+
+## 3. 기술 스택
+
+- 언어: JavaScript
+- 런타임: Node.js
+- 웹 프레임워크: Express
+- DB: MySQL
+- 기타: dotenv, cors, helmet, morgan
+
+## 4. 공통 설계 원칙
+
+- 마이크로서비스는 인증 없이 요청만 처리합니다.
+- API 응답은 JSON으로 통일합니다.
+- 도메인에서 리포지토리 인터페이스를 선언하고 인프라에서 실제 구현을 제공합니다.
+- 페이징 지원 목록 조회는 `page`와 `size` 요청 바디를 사용합니다.
+- `createdAt`은 DB의 `created_at`을 ISO 8601 문자열로 변환하여 응답합니다.
+- `date` 필드는 공지사항 목록 조회 응답에서 `createdAt`을 `YYYY.MM.DD` 형식으로 추가합니다.
+
+## 5. 공지사항(Notice) 설계
+
+### 5.1 데이터 모델
+
+MySQL 테이블: `notices`
+
+- `id` INT AUTO_INCREMENT PRIMARY KEY
+- `title` VARCHAR(255) NOT NULL
+- `content` TEXT NOT NULL
+- `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+### 5.2 API
+
+- `GET /notices` - 공지사항 목록 조회 (페이징)
+  - 요청 바디: `{ page, size }`
+- `POST /notices` - 공지사항 생성
+- `PUT /notices/:id` - 공지사항 수정
+- `DELETE /notices/:id` - 공지사항 삭제
+
+### 5.3 목록 조회 응답 예시
+
+```json
+{
+  "status": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "items": [
+      {
+        "id": 1,
+        "title": "🎉 v1.2.0 업데이트",
+        "content": "새로운 피부 분석 기능이 추가되었습니다.",
+        "createdAt": "2026-03-15T00:00:00Z",
+        "date": "2026.03.15"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 1,
+      "totalItems": 4,
+      "hasNext": false,
+      "hasPrev": false
+    }
+  }
+}
+```
+
+## 6. 피부백과(Encyclopedia) 설계
+
+### 6.1 데이터 모델
+
+MySQL 테이블: `encyclopedia`
+
+- `id` INT AUTO_INCREMENT PRIMARY KEY
+- `title` VARCHAR(255) NOT NULL
+- `content` TEXT NOT NULL
+- `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+### 6.2 API
+
+- `GET /encyclopedia` - 피부백과 목록 조회 (페이징)
+  - 요청 바디: `{ query, page, size }`
+- `POST /encyclopedia` - 피부백과 생성
+- `PUT /encyclopedia/:id` - 피부백과 수정
+- `DELETE /encyclopedia/:id` - 피부백과 삭제
+
+### 6.3 목록 조회 응답 예시
+
+```json
+{
+  "status": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "items": [
+      {
+        "id": 1,
+        "title": "피부 종양이란?",
+        "content": "피부 종양은 피부에 발생하는 비정상적인 조직 증식입니다."
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 2,
+      "totalItems": 8,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}
+```
+
+## 7. 구현 범위 제한
+
+- 구현은 `backend/content-service` 폴더 내부로만 한정합니다.
+- 다른 마이크로서비스 폴더는 이 설계서의 구현 대상이 아닙니다.
+- 토큰 검증 및 인증 로직은 API 게이트웨이에서만 처리합니다.
+
+## 8. 개발 흐름
+
+1. `backend/content-service` 폴더에 Express 앱 초기화
+2. MySQL 연결 및 DB 설정 (`infrastructure`)
+3. `domain`에 엔티티 및 인터페이스 정의
+4. `application`에 공지사항/피부백과 비즈니스 로직 작성
+5. `interface`에 라우터 및 컨트롤러 작성
+6. 목록 조회에 페이징 결과 생성
+7. 테스트 및 API 검증
