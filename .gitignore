@@ -82,4 +82,3 @@ Thumbs.db
 # AI models (if any)
 *.pt
 *.pth
-models/
