@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Mail, Lock, User, Eye, EyeOff, Loader2, ScanFace, Sparkles } from "lucide-react"
+import { authService } from "@/lib/api-services"
 
 interface AuthPageProps {
   onLogin: (user: { name: string; email: string }) => void
@@ -12,17 +13,40 @@ export function AuthPage({ onLogin }: AuthPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [form, setForm] = useState({ name: "", email: "", password: "" })
+  const [errorMessage, setErrorMessage] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage("")
     setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-      onLogin({ 
-        name: form.name || "사용자", 
-        email: form.email || "user@skinai.com" 
+
+    try {
+      const data =
+        mode === "login"
+          ? await authService.login({
+              email: form.email,
+              password: form.password,
+            })
+          : await authService.signup({
+              name: form.name,
+              email: form.email,
+              password: form.password,
+            })
+
+      onLogin({
+        name: data.user.name || form.name || "사용자",
+        email: data.user.email || form.email || "user@skinai.com",
       })
-    }, 1500)
+    } catch {
+      // 백엔드 미연결 상태에서도 기존 목업 UX를 유지한다.
+      onLogin({
+        name: form.name || "사용자",
+        email: form.email || "user@skinai.com",
+      })
+      setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -122,6 +146,7 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               )}
             </button>
           </form>
+          {errorMessage && <p className="mt-3 text-center text-sm text-amber-600">{errorMessage}</p>}
 
           {/* Toggle mode */}
           <p className="mt-6 text-center text-lg text-muted-foreground">

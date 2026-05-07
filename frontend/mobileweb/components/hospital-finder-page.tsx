@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   MapPin,
   Phone,
@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react"
+import { hospitalService } from "@/lib/api-services"
 
 const hospitalsData = [
   {
@@ -58,17 +59,48 @@ export function HospitalFinderPage() {
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 3
+  const [hospitals, setHospitals] = useState(hospitalsData)
+  const [totalCount, setTotalCount] = useState(hospitalsData.length)
 
-  const sortedHospitals = [...hospitalsData].sort((a, b) => {
-    if (sortBy === "distance") return a.distance.localeCompare(b.distance)
-    return b.rating - a.rating
-  })
+  useEffect(() => {
+    const loadHospitals = async () => {
+      try {
+        const response = await hospitalService.getNearby({
+          lat: 37.4979,
+          lng: 127.0276,
+          sort: sortBy,
+          page: currentPage,
+          size: itemsPerPage,
+        })
+        const mapped = response.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          address: item.address,
+          phone: item.phone,
+          hours: item.hours,
+          rating: item.rating,
+          distance: `${item.distanceKm}km`,
+          isOpen: item.isOpen,
+          mapUrl: item.mapUrl,
+        }))
+        setHospitals(mapped)
+        setTotalCount(response.total)
+      } catch {
+        // API 미연결 시 목업 데이터를 유지한다.
+        const sorted = [...hospitalsData].sort((a, b) => {
+          if (sortBy === "distance") return a.distance.localeCompare(b.distance)
+          return b.rating - a.rating
+        })
+        const startIndex = (currentPage - 1) * itemsPerPage
+        setHospitals(sorted.slice(startIndex, startIndex + itemsPerPage))
+        setTotalCount(hospitalsData.length)
+      }
+    }
 
-  const paginatedHospitals = sortedHospitals.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
-  const totalPages = Math.ceil(hospitalsData.length / itemsPerPage)
+    void loadHospitals()
+  }, [sortBy, currentPage])
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage))
 
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-8">
@@ -99,18 +131,22 @@ export function HospitalFinderPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between px-1">
           <p className="text-sm font-medium tracking-widest uppercase text-muted-foreground">
-            검색 결과 ({hospitalsData.length})
+            검색 결과 ({totalCount})
           </p>
           <button
             type="button"
+            onClick={() => {
+              setSortBy((prev) => (prev === "distance" ? "rating" : "distance"))
+              setCurrentPage(1)
+            }}
             className="flex items-center gap-1 text-sm font-medium text-blue-500 hover:underline"
           >
             <Navigation className="h-3.5 w-3.5" />
-            거리순
+            {sortBy === "distance" ? "거리순" : "평점순"}
           </button>
         </div>
 
-        {paginatedHospitals.map((hospital, i) => (
+        {hospitals.map((hospital, i) => (
           <div
             key={hospital.id}
             className="rounded-[22px] border border-white/40 bg-white/60 p-5 shadow-lg shadow-blue-100/15 backdrop-blur-xl transition-all hover:scale-[1.02] hover:shadow-xl"

@@ -1,24 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  ArrowLeft,
-  Share2,
-  MapPin,
-  ShieldCheck,
-  AlertTriangle,
-  TrendingUp,
-  Droplets,
-  Sun,
-  Layers,
-  Download,
-  CheckCircle2,
-} from "lucide-react"
+import { ArrowLeft, Share2, MapPin, Download } from "lucide-react"
+import { ShareModal } from "@/components/share-modal"
+import { generateDirectPDF, downloadPDF } from "@/utils/direct-pdf"
+import { diagnosisService } from "@/lib/api-services"
 
 interface ResultData {
   imagePreview: string
-  gender: string
-  age: string
+  diagnosisId?: number
+  suspectedDisease?: string
+  probability?: number
 }
 
 interface ResultPageProps {
@@ -27,44 +19,72 @@ interface ResultPageProps {
   onFindHospital?: () => void
 }
 
-/* Simulated AI results */
-const overallScore = 85
-const diagnosisItems = [
-  {
-    label: "수분 보유도",
-    score: 78,
-    icon: Droplets,
-    color: "from-cyan-400 to-blue-500",
-    iconBg: "bg-cyan-50",
-    iconColor: "text-cyan-500",
-  },
-  {
-    label: "UV 손상도",
-    score: 32,
-    icon: Sun,
-    color: "from-amber-400 to-orange-500",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-500",
-  },
-  {
-    label: "피부 장벽",
-    score: 91,
-    icon: Layers,
-    color: "from-emerald-400 to-teal-500",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-500",
-  },
-  {
-    label: "피지 균형",
-    score: 64,
-    icon: TrendingUp,
-    color: "from-violet-400 to-indigo-500",
-    iconBg: "bg-violet-50",
-    iconColor: "text-violet-500",
-  },
-]
+function getColorConfig(probability: number) {
+  if (probability >= 70) {
+    return {
+      color: "rgb(239, 68, 68)", // red-500
+      badgeBg: "bg-red-50 text-red-600 border-red-200/60",
+    }
+  } else if (probability >= 30) {
+    return {
+      color: "rgb(249, 115, 22)", // orange-500
+      badgeBg: "bg-orange-50 text-orange-600 border-orange-200/60",
+    }
+  }
+  return {
+    color: "rgb(34, 197, 94)", // emerald-500
+    badgeBg: "bg-emerald-50 text-emerald-600 border-emerald-200/60",
+  }
+}
 
-function AnimatedScore({ target }: { target: number }) {
+function ProbabilityRing({ probability }: { probability: number }) {
+  const radius = 58
+  const circumference = 2 * Math.PI * radius
+  const [offset, setOffset] = useState(circumference)
+  const colorConfig = getColorConfig(probability)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOffset(circumference - (probability / 100) * circumference)
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [probability, circumference])
+
+  return (
+    <div className="relative">
+      <svg width="140" height="140" className="transform -rotate-90">
+        <circle
+          cx="70"
+          cy="70"
+          r={radius}
+          stroke="rgb(226 232 240)"
+          strokeWidth="12"
+          fill="none"
+        />
+        <circle
+          cx="70"
+          cy="70"
+          r={radius}
+          stroke={colorConfig.color}
+          strokeWidth="12"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-3xl font-extrabold text-foreground">
+          <AnimatedProbability target={probability} />
+        </div>
+        <div className="text-xs font-medium text-muted-foreground">확률</div>
+      </div>
+    </div>
+  )
+}
+
+function AnimatedProbability({ target }: { target: number }) {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
@@ -85,109 +105,90 @@ function AnimatedScore({ target }: { target: number }) {
     return () => cancelAnimationFrame(frame)
   }, [target])
 
-  return <span>{count}</span>
-}
-
-function ScoreRing({ score }: { score: number }) {
-  const radius = 58
-  const circumference = 2 * Math.PI * radius
-  const [offset, setOffset] = useState(circumference)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setOffset(circumference - (score / 100) * circumference)
-    }, 200)
-    return () => clearTimeout(timer)
-  }, [score, circumference])
-
-  const color = score >= 80 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444"
-
-  return (
-    <div className="relative flex h-40 w-40 items-center justify-center">
-      <svg className="h-40 w-40 -rotate-90" viewBox="0 0 140 140">
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          className="text-slate-100"
-          strokeWidth="10"
-        />
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="transition-all duration-[1.2s] ease-out"
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-4xl font-extrabold tracking-tight text-foreground">
-          <AnimatedScore target={score} />
-        </span>
-        <span className="text-xs font-bold tracking-wide text-muted-foreground">/ 100</span>
-      </div>
-    </div>
-  )
+  return <span>{count}%</span>
 }
 
 export function ResultPage({ data, onBack, onFindHospital }: ResultPageProps) {
-  const isGood = overallScore >= 70
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [resultData, setResultData] = useState(data)
+
+  useEffect(() => {
+    setResultData(data)
+  }, [data])
+
+  useEffect(() => {
+    const diagnosisId = data.diagnosisId
+    if (!diagnosisId) return
+
+    const loadDetail = async () => {
+      try {
+        const detail = await diagnosisService.getById(diagnosisId)
+        setResultData((prev) => ({
+          ...prev,
+          diagnosisId: detail.diagnosisId,
+          suspectedDisease: detail.result?.suspectedDisease || prev.suspectedDisease,
+          probability: detail.result?.probability ?? prev.probability,
+        }))
+      } catch {
+        // 상세 API 실패 시 최초 분석 응답값을 그대로 사용한다.
+      }
+    }
+
+    void loadDetail()
+  }, [data.diagnosisId])
+
+  const suspectedDisease = resultData.suspectedDisease || "기저세포암"
+  const probability = resultData.probability ?? 78
+  const summary = `의심 질환: ${suspectedDisease} (${probability}% 확률)`
 
   const handleDownload = () => {
-    const resultText = `
-SkinAI 피부 진단 결과
-====================
-날짜: ${new Date().toLocaleDateString("ko-KR")}
-성별: ${data.gender === "male" ? "남성" : "여성"}
-나이: ${data.age}세
-
-종합 점수: ${overallScore}점
-
-세부 항목:
-- 수분 보유도: 78%
-- UV 손상도: 32%
-- 피부 장벽: 91%
-- 피지 균형: 64%
-
-상태: ${isGood ? "양호한 피부 상태" : "주의 필요"}
-
-※ 본 결과는 AI 분석 결과이며, 정확한 진단은 전문 의료진과 상담하세요.
-    `.trim()
-
-    const blob = new Blob([resultText], { type: "text/plain;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `skinai-result-${new Date().toISOString().split("T")[0]}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    // 진단 결과 데이터 구성
+    const reportData = {
+      date: new Date().toLocaleDateString('ko-KR'),
+      result: suspectedDisease,
+      score: probability,
+      summary,
+      details: {
+        probability,
+      },
+      generatedAt: new Date().toISOString()
+    }
+    
+    // PDF 생성 및 다운로드
+    const pdfData = generateDirectPDF(reportData)
+    const filename = `skinai-result-${new Date().toISOString().split('T')[0]}.pdf`
+    const success = downloadPDF(pdfData, filename)
+    
+    // 토스트 메시지 표시
+    const toast = document.createElement('div')
+    toast.textContent = success ? 'PDF 파일 다운로드가 되었습니다.' : 'PDF 파일이 새 창에서 열렸습니다. 저장을 선택해주세요.'
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 10000;
+      max-width: 300px;
+      text-align: center;
+    `
+    
+    document.body.appendChild(toast)
+    
+    // 3초 후 제거
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast)
+      }
+    }, 3000)
   }
 
-  const handleShare = async () => {
-    const shareData = {
-      title: "SkinAI 피부 진단 결과",
-      text: `AI 피부 진단 결과: ${overallScore}점 (${isGood ? "양호" : "주의 필요"})`,
-      url: window.location.href,
-    }
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData)
-      } catch {
-        // User cancelled or share failed
-      }
-    } else {
-      navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
-      alert("결과가 클립보드에 복사되었습니다!")
-    }
+  const handleShare = () => {
+    setIsShareModalOpen(true)
   }
 
   return (
@@ -207,86 +208,26 @@ SkinAI 피부 진단 결과
         {/* Uploaded photo */}
         <div className="relative mb-7 overflow-hidden rounded-3xl shadow-lg shadow-blue-200/30">
           <img
-            src={data.imagePreview}
+            src={resultData.imagePreview}
             alt="Analyzed skin photo"
             className="h-52 w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-blue-500/5 pointer-events-none" />
-          {/* User info badge */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-white/40 bg-white/80 px-4 py-1.5 text-xs font-bold shadow-md backdrop-blur-md">
-            <span className="text-foreground">
-              {data.gender === "male" ? "남성" : "여성"} / {data.age}세
-            </span>
-          </div>
         </div>
 
-        {/* Score ring */}
+        {/* Probability ring */}
         <div className="flex flex-col items-center gap-4">
-          <ScoreRing score={overallScore} />
+          <ProbabilityRing probability={probability} />
 
-          {/* Status badge */}
-          <div
-            className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-bold shadow-sm ${
-              isGood
-                ? "border-emerald-200/60 bg-emerald-50 text-emerald-600"
-                : "border-amber-200/60 bg-amber-50 text-amber-600"
-            }`}
-          >
-            {isGood ? (
-              <ShieldCheck className="h-4 w-4" />
-            ) : (
-              <AlertTriangle className="h-4 w-4" />
-            )}
-            {isGood ? "양호한 피부 상태" : "주의 필요"}
+          {/* Disease name */}
+          <div className="text-center">
+            <h3 className="text-xl font-extrabold text-foreground">
+              {suspectedDisease}
+            </h3>
           </div>
-
-          <p className="text-center text-sm leading-relaxed text-muted-foreground px-2">
-            AI 분석 결과, 전반적으로{" "}
-            <strong className="text-foreground">양호한 피부 상태</strong>입니다.
-            다만 UV 보호에 신경을 써주시면 더 건강한 피부를 유지할 수 있습니다.
-          </p>
         </div>
       </div>
 
-      {/* Detail breakdown */}
-      <div className="w-full rounded-[28px] border border-white/40 bg-white/60 p-6 shadow-2xl shadow-blue-200/25 backdrop-blur-xl">
-        <h3 className="mb-5 text-base font-extrabold tracking-tight text-foreground">
-          세부 분석 항목
-        </h3>
-        <div className="flex flex-col gap-4">
-          {diagnosisItems.map((item, i) => {
-            const Icon = item.icon
-            return (
-              <div
-                key={item.label}
-                className="flex items-center gap-4"
-              >
-                <span
-                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl ${item.iconBg}`}
-                >
-                  <Icon className={`h-5 w-5 ${item.iconColor}`} strokeWidth={1.8} />
-                </span>
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold tracking-tight text-foreground">
-                      {item.label}
-                    </span>
-                    <span className="text-sm font-extrabold tabular-nums text-foreground">
-                      {item.score}%
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={`h-full rounded-full bg-gradient-to-r ${item.color} transition-all duration-700`}
-                      style={{ width: `${item.score}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
 
       {/* Action buttons */}
       <div className="flex w-full gap-3">
@@ -298,6 +239,17 @@ SkinAI 피부 진단 결과
           <Share2 className="h-5 w-5 text-slate-500" />
           공유하기
         </button>
+
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          shareData={{
+            title: "SkinAI 피부 진단 결과",
+            text: summary,
+            url: window.location.href,
+          }}
+        />
         <button
           type="button"
           onClick={handleDownload}
