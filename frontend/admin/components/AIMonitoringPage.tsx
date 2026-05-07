@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { monitoringApi } from "@/src/api/monitoring";
 import {
   AreaChart,
   Area,
@@ -28,15 +27,16 @@ import {
   TrendingDown,
 } from "lucide-react";
 
-// Mock data for fallback
-const mockPerformanceData = [
+// Performance trend data - Realistic medical AI metrics
+const performanceData = [
   { month: "1월", 정확도: 92.3, 정밀도: 89.7, 재현율: 91.2, F1점수: 90.4 },
   { month: "2월", 정확도: 93.5, 정밀도: 90.8, 재현율: 92.6, F1점수: 91.7 },
   { month: "3월", 정확도: 94.8, 정밀도: 92.1, 재현율: 94.3, F1점수: 93.2 },
   { month: "4월", 정확도: 96.1, 정밀도: 93.7, 재현율: 95.8, F1점수: 94.7 },
 ];
 
-const mockDiseaseAccuracyData = [
+// Disease accuracy data - Simple structure for BarChart
+const diseaseAccuracyData = [
   { name: "기저세포암", value: 96.5 },
   { name: "편평세포암", value: 94.2 },
   { name: "흑색종", value: 91.8 },
@@ -45,57 +45,56 @@ const mockDiseaseAccuracyData = [
   { name: "지루성 각화증", value: 85.9 },
 ];
 
+// Mini chart data for summary cards
+const miniChartData = [
+  { time: "00:00", value: 120 },
+  { time: "04:00", value: 98 },
+  { time: "08:00", value: 145 },
+  { time: "12:00", value: 167 },
+  { time: "16:00", value: 134 },
+  { time: "20:00", value: 112 },
+];
 
-// Mock data for fallback
-const mockSystemStatus = {
-  averageResponseTime: 2300,
-  dailyRequests: 15234,
-  errorRate: 0.8,
-  uptime: 99.9
-};
-
-// Dynamic summary cards based on system status
-const getSummaryCards = (status: any) => [
+const summaryCards = [
   {
     title: "평균 응답시간",
-    value: status ? `${(status.averageResponseTime / 1000).toFixed(1)}초` : "2.3초",
-    change: status ? "+0.2초" : "+0.2초",
-    trend: "up" as const,
+    value: "2.3초",
+    change: "+0.2초",
+    trend: "up",
     icon: Clock,
     color: "blue",
     unit: "ms",
   },
   {
     title: "일일 요청량",
-    value: status ? status.dailyRequests.toLocaleString() : "15,234",
+    value: "15,234",
     change: "+12%",
-    trend: "up" as const,
+    trend: "up",
     icon: Activity,
     color: "green",
     unit: "건",
   },
   {
     title: "오류율",
-    value: status ? `${status.errorRate}%` : "0.8%",
-    change: status ? "-0.3%" : "-0.3%",
-    trend: "down" as const,
+    value: "0.8%",
+    change: "-0.3%",
+    trend: "down",
     icon: AlertTriangle,
     color: "red",
     unit: "%",
   },
   {
     title: "가동 시간",
-    value: status ? `${status.uptime}%` : "99.9%",
+    value: "99.9%",
     change: "안정",
-    trend: "stable" as const,
+    trend: "stable",
     icon: Server,
     color: "purple",
     unit: "%",
   },
 ];
 
-// Mock data for fallback
-const mockModelInfo = [
+const modelInfo = [
   { label: "모델 버전", value: "EfficientNet-B4 v2.1" },
   { label: "마지막 학습일", value: "2024-07-15" },
   { label: "학습 데이터셋", value: "ISIC 2024 (15,234 이미지)" },
@@ -104,60 +103,12 @@ const mockModelInfo = [
   { label: "분류 클래스", value: "7개 질환 클래스" },
 ];
 
-// Dynamic model info based on API response
-const getModelInfo = (info: any) => {
-  if (!info) return mockModelInfo;
-  
-  return [
-    { label: "모델 버전", value: info.modelVersion || "EfficientNet-B4 v2.1" },
-    { label: "마지막 학습일", value: info.lastTrained || "2024-07-15" },
-    { label: "학습 데이터셋", value: info.dataset || "ISIC 2024 (15,234 이미지)" },
-    { label: "모델 아키텍처", value: info.architecture || "EfficientNet-B4" },
-    { label: "입력 크기", value: info.inputSize || "380x380 RGB" },
-    { label: "분류 클래스", value: info.classes || "7개 질환 클래스" },
-  ];
-};
-
 export function AIMonitoringPage() {
-  const [performanceData, setPerformanceData] = useState(mockPerformanceData);
-  const [diseaseAccuracyData, setDiseaseAccuracyData] = useState(mockDiseaseAccuracyData);
-  const [systemStatus, setSystemStatus] = useState(null);
-  const [modelInfo, setModelInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchMonitoringData = async () => {
-      setLoading(true);
-      try {
-        // API 연동 시도
-        const [performanceRes, diseaseRes, systemRes, modelRes] = await Promise.all([
-          monitoringApi.getPerformanceMetrics(),
-          monitoringApi.getDiseaseAccuracy(),
-          monitoringApi.getSystemStatus(),
-          monitoringApi.getModelInfo()
-        ]);
-        
-        setPerformanceData(performanceRes.data);
-        setDiseaseAccuracyData(diseaseRes.data);
-        setSystemStatus(systemRes.data);
-        setModelInfo(modelRes.data);
-      } catch (error) {
-        // API 연동 실패 시 - 프론트 테스트 모드로 동작
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작");
-        // 이미 mock 데이터로 설정되어 있으므로 그대로 사용
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMonitoringData();
-  }, []);
-
   return (
     <div className="space-y-3">
       {/* Summary Cards - Optimized Layout */}
       <div className="grid grid-cols-4 gap-3">
-        {getSummaryCards(systemStatus).map((card, index) => {
+        {summaryCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <Card key={index} className="shadow-md border-gray-100 rounded-xl">
@@ -320,7 +271,7 @@ export function AIMonitoringPage() {
             모델 정보
           </h3>
           <div className="grid grid-cols-3 gap-3">
-            {getModelInfo(modelInfo).map((info, index) => (
+            {modelInfo.map((info, index) => (
               <div key={index} className="flex justify-between items-center p-1.5 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600 font-medium">{info.label}</span>
                 <span className="text-sm font-semibold text-gray-900">

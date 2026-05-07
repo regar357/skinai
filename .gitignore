@@ -11,6 +11,8 @@ dist/
 downloads/
 eggs/
 .eggs/
+lib/
+lib64/
 parts/
 sdist/
 var/
@@ -80,3 +82,4 @@ Thumbs.db
 # AI models (if any)
 *.pt
 *.pth
+models/

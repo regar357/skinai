@@ -7,7 +7,6 @@ export { analysisApi } from './analysis';
 export { sharesApi } from './shares';
 export { feedbacksApi } from './feedbacks';
 export { contentApi } from './content';
-export { adminApi } from './admin';
 
 // 재내보내
 export { apiClient, ApiClient } from '../api-client';

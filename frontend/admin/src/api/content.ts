@@ -14,13 +14,8 @@ export const contentApi = {
       return apiClient.get<Disease>(`/diseases/${diseaseId}`);
     },
 
-    // 백과 상세 조회 (Admin용)
-    getDetailById: (diseaseId: number): Promise<ApiResponse<Disease>> => {
-      return apiClient.get<Disease>(`/admin/diseases/${diseaseId}`);
-    },
-
     // 백과 생성 (Admin 기능)
-    create: (data: { title: string; description: string }): Promise<ApiResponse<Disease>> => {
+    create: (data: Omit<Disease, 'disease_id' | 'created_at'>): Promise<ApiResponse<Disease>> => {
       return apiClient.post<Disease>('/admin/diseases', data);
     },
 

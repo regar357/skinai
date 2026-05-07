@@ -1,7 +1,7 @@
 import { ApiResponse, PaginatedResponse } from './types';
 
 // API Base Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
 
 class ApiClient {
   private baseURL: string;
@@ -39,23 +39,7 @@ class ApiClient {
         headers,
       });
 
-      // 응답이 JSON이 아닌 경우를 처리
-      const contentType = response.headers.get('content-type');
-      let data;
-      
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        // HTML 에러 페이지 등 비 JSON 응답 처리
-        const text = await response.text();
-        if (text.includes('<!DOCTYPE')) {
-          // HTML 에러 페이지인 경우
-          throw new Error('API 서버에 연결할 수 없습니다. 개발 모드로 동작합니다.');
-        } else {
-          // 다른 텍스트 응답인 경우
-          throw new Error('예상치 못한 응답 형식입니다.');
-        }
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
@@ -63,8 +47,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      // 개발 모드에서는 에러 메시지 숨김
-      // console.error('API Request Error:', error);
+      console.error('API Request Error:', error);
       throw error;
     }
   }
@@ -132,8 +115,7 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      // 개발 모드에서는 에러 메시지 숨김
-      // console.error('File Upload Error:', error);
+      console.error('File Upload Error:', error);
       throw error;
     }
   }

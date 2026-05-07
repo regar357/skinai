@@ -6,7 +6,6 @@ import {
   Users,
   Clock,
   MessageSquare,
-  Bell,
   BookOpen,
   Activity,
   LogOut,
@@ -25,7 +24,6 @@ const menuItems: MenuItem[] = [
   { id: "users", label: "사용자 관리", icon: <Users className="h-5 w-5" /> },
   { id: "records", label: "검사 기록", icon: <Clock className="h-5 w-5" /> },
   { id: "feedback", label: "피드백", icon: <MessageSquare className="h-5 w-5" /> },
-  { id: "notice", label: "공지사항", icon: <Bell className="h-5 w-5" /> },
   { id: "encyclopedia", label: "피부종양 백과", icon: <BookOpen className="h-5 w-5" /> },
   { id: "monitoring", label: "AI 진단 모니터링", icon: <Activity className="h-5 w-5" /> },
 ]

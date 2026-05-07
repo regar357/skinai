@@ -7,7 +7,6 @@ import { DashboardContent } from "./dashboard-content"
 import { UsersPage } from "./users-page"
 import { RecordsPage } from "./records-page"
 import { FeedbackPage } from "./feedback-page"
-import { NoticePage } from "./notice-page"
 import { EncyclopediaPage } from "./encyclopedia-page"
 import { AIMonitoringPage } from "@/components/AIMonitoringPage"
 
@@ -16,7 +15,6 @@ const menuTitles: Record<string, string> = {
   users: "사용자 관리",
   records: "검사 기록",
   feedback: "피드백",
-  notice: "공지사항",
   encyclopedia: "피부종양 백과",
   monitoring: "AI 진단 모니터링",
 }
@@ -31,8 +29,6 @@ function PageContent({ activeMenu }: { activeMenu: string }) {
       return <RecordsPage />
     case "feedback":
       return <FeedbackPage />
-    case "notice":
-      return <NoticePage />
     case "encyclopedia":
       return <EncyclopediaPage />
     case "monitoring":
