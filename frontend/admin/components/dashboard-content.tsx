@@ -1,5 +1,7 @@
 import { Users, UserCheck, BarChart3, Calendar } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { dashboardApi } from "@/src/api/dashboard"
+import { useState, useEffect } from "react"
 import {
   AreaChart,
   Area,
@@ -68,12 +70,105 @@ const userTrendData = [
   { month: "4월", active: 50, new: 55 },
 ]
 
+// Mock data for fallback
+const mockStats = {
+  totalUsers: 1234,
+  activeUsers: 892,
+  totalAnalyses: 5678,
+  todayAnalyses: 45
+};
+
+const mockDiagnosisTrend = [
+  { month: "1월", value: 120 },
+  { month: "2월", value: 150 },
+  { month: "3월", value: 180 },
+  { month: "4월", value: 200 },
+];
+
+const mockDiseaseDistribution = [
+  { name: "기저세포암", value: 45, percentage: 28 },
+  { name: "편평세포암", value: 32, percentage: 20 },
+  { name: "흑색종", value: 28, percentage: 18 },
+  { name: "양성 종양", value: 65, percentage: 34 },
+];
+
+const mockUserTrend = [
+  { month: "1월", active: 45, new: 50 },
+  { month: "2월", active: 60, new: 65 },
+  { month: "3월", active: 65, new: 70 },
+  { month: "4월", active: 50, new: 55 },
+];
+
 export function DashboardContent() {
+  const [stats, setStats] = useState(mockStats);
+  const [diagnosisTrend, setDiagnosisTrend] = useState(mockDiagnosisTrend);
+  const [diseaseDistribution, setDiseaseDistribution] = useState(mockDiseaseDistribution);
+  const [userTrend, setUserTrend] = useState(mockUserTrend);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, diagnosisRes, diseaseRes, userRes] = await Promise.all([
+          dashboardApi.getStats(),
+          dashboardApi.getDiagnosisTrend(),
+          dashboardApi.getDiseaseDistribution(),
+          dashboardApi.getUserTrend()
+        ]);
+        
+        setStats(statsRes.data);
+        setDiagnosisTrend(diagnosisRes.data);
+        setDiseaseDistribution(diseaseRes.data);
+        setUserTrend(userRes.data);
+      } catch (error) {
+        console.log("API 연동 실패 - 프론트 테스트 모드로 동작");
+        // 이미 mock 데이터로 설정되어 있으므로 그대로 사용
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Dynamic stats based on API data
+  const getDynamicStats = (statsData: any) => [
+    {
+      label: "총 사용자",
+      value: statsData ? statsData.totalUsers.toLocaleString() : "1,234",
+      icon: <Users className="h-5 w-5" />,
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-500",
+    },
+    {
+      label: "활성 사용자",
+      value: statsData ? statsData.activeUsers.toLocaleString() : "892",
+      icon: <UserCheck className="h-5 w-5" />,
+      iconBg: "bg-green-50",
+      iconColor: "text-green-500",
+    },
+    {
+      label: "총 분석 건수",
+      value: statsData ? statsData.totalAnalyses.toLocaleString() : "5,678",
+      icon: <BarChart3 className="h-5 w-5" />,
+      iconBg: "bg-purple-50",
+      iconColor: "text-purple-500",
+    },
+    {
+      label: "오늘 분석",
+      value: statsData ? statsData.todayAnalyses.toLocaleString() : "45",
+      icon: <Calendar className="h-5 w-5" />,
+      iconBg: "bg-orange-50",
+      iconColor: "text-orange-500",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {getDynamicStats(stats).map((stat) => (
           <Card key={stat.label} className="border-gray-200 bg-white">
             <CardContent className="flex items-center justify-between p-6">
               <div>
@@ -101,7 +196,7 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={diagnosisData}>
+              <AreaChart data={diagnosisTrend}>
                 <defs>
                   <linearGradient id="colorDiagnosis" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
@@ -140,7 +235,7 @@ export function DashboardContent() {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={diseaseData}
+                  data={diseaseDistribution}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -149,7 +244,7 @@ export function DashboardContent() {
                   dataKey="value"
                   isAnimationActive={false}
                 >
-                  {diseaseData.map((entry, index) => (
+                  {diseaseDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={`hsl(${142 + index * 15}, 70%, ${45 + index * 5}%)`} />
                   ))}
                 </Pie>
@@ -159,7 +254,7 @@ export function DashboardContent() {
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {diseaseData.map((item, index) => (
+              {diseaseDistribution.map((item, index) => (
                 <div key={item.name} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1">
                     <div 
@@ -196,7 +291,7 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={userTrendData}>
+              <BarChart data={userTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" stroke="#888" />
                 <YAxis stroke="#888" />

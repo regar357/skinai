@@ -23,17 +23,26 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Simple mock authentication - in real app, this would be an API call
-      if (email === "admin@skinai.com" && password === "admin123") {
+      // API 연동 전 개발용 - 무조건 로그인 성공
+      if (email && password) {
         // Store authentication token in localStorage
         localStorage.setItem("isAuthenticated", "true")
         localStorage.setItem("userEmail", email)
+        localStorage.setItem("userNickname", "관리자")
         router.push("/")
       } else {
-        setError("Invalid email or password")
+        setError("이메일과 비밀번호를 입력해주세요")
       }
     } catch (err) {
-      setError("Login failed. Please try again.")
+      // API 연동 실패 시에도 개발용으로 로그인 처리
+      if (email && password) {
+        localStorage.setItem("isAuthenticated", "true")
+        localStorage.setItem("userEmail", email)
+        localStorage.setItem("userNickname", "관리자")
+        router.push("/")
+      } else {
+        setError("이메일과 비밀번호를 입력해주세요")
+      }
     } finally {
       setIsLoading(false)
     }

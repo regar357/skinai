@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Search, Plus, Download, Calendar } from "lucide-react"
 import {
   Table,
@@ -19,36 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { searchService, MockUser } from "@/src/services/search-service"
+import { usersApi } from "@/src/api/users"
 
-interface User {
-  id: number
-  username: string
-  email: string
-  status: "활성" | "정지"
-  joinDate: string
-  lastLogin: string
-  analysisCount: number
-}
-
-const USERS: User[] = [
-  { id: 1,  username: "김민준", email: "minjun.kim@example.com",   status: "활성", joinDate: "2024-01-15", lastLogin: "2024-07-21", analysisCount: 25 },
-  { id: 2,  username: "이서연", email: "seoyeon.lee@example.com",  status: "정지", joinDate: "2024-02-20", lastLogin: "2024-07-18", analysisCount: 12 },
-  { id: 3,  username: "박지호", email: "jiho.park@example.com",    status: "활성", joinDate: "2024-03-10", lastLogin: "2024-07-21", analysisCount: 8  },
-  { id: 4,  username: "최수빈", email: "subin.choi@example.com",   status: "활성", joinDate: "2024-03-22", lastLogin: "2024-07-20", analysisCount: 34 },
-  { id: 5,  username: "정현우", email: "hyunwoo.jung@example.com", status: "정지", joinDate: "2024-04-05", lastLogin: "2024-06-30", analysisCount: 6  },
-  { id: 6,  username: "한소희", email: "sohee.han@example.com",    status: "활성", joinDate: "2024-04-18", lastLogin: "2024-07-19", analysisCount: 19 },
-  { id: 7,  username: "오준혁", email: "junhyuk.oh@example.com",   status: "활성", joinDate: "2024-05-02", lastLogin: "2024-07-21", analysisCount: 42 },
-  { id: 8,  username: "윤아름", email: "areum.yoon@example.com",   status: "정지", joinDate: "2024-05-14", lastLogin: "2024-07-05", analysisCount: 3  },
-  { id: 9,  username: "임채원", email: "chaewon.lim@example.com",  status: "활성", joinDate: "2024-05-27", lastLogin: "2024-07-20", analysisCount: 15 },
-  { id: 10, username: "강태양", email: "taeyang.kang@example.com", status: "활성", joinDate: "2024-06-08", lastLogin: "2024-07-21", analysisCount: 7  },
-  { id: 11, username: "백하은", email: "haeun.baek@example.com",   status: "활성", joinDate: "2024-06-15", lastLogin: "2024-07-18", analysisCount: 22 },
-  { id: 12, username: "신동현", email: "donghyun.shin@example.com",status: "정지", joinDate: "2024-06-20", lastLogin: "2024-07-10", analysisCount: 9  },
-  { id: 13, username: "조미래", email: "mirae.jo@example.com",     status: "활성", joinDate: "2024-06-25", lastLogin: "2024-07-21", analysisCount: 31 },
-  { id: 14, username: "문지우", email: "jiwoo.moon@example.com",   status: "활성", joinDate: "2024-07-01", lastLogin: "2024-07-20", analysisCount: 5  },
-  { id: 15, username: "류세진", email: "sejin.ryu@example.com",    status: "활성", joinDate: "2024-07-08", lastLogin: "2024-07-21", analysisCount: 2  },
-]
-
-function StatusBadge({ status }: { status: "활성" | "정지" }) {
+function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
   if (status === "활성") {
     return (
       <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-700">
@@ -56,9 +30,16 @@ function StatusBadge({ status }: { status: "활성" | "정지" }) {
       </span>
     )
   }
+  if (status === "정지") {
+    return (
+      <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700">
+        정지
+      </span>
+    )
+  }
   return (
-    <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700">
-      정지
+    <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-700">
+      삭제
     </span>
   )
 }
@@ -66,27 +47,103 @@ function StatusBadge({ status }: { status: "활성" | "정지" }) {
 export function UsersPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [deleteConfirmUserId, setDeleteConfirmUserId] = useState<number | null>(null)
+  const [users, setUsers] = useState<MockUser[]>([])
+  const [loading, setLoading] = useState(false)
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 })
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const filtered = USERS.filter((u) => {
-    const matchSearch =
-      u.username.includes(search) || u.email.includes(search)
-    const matchStatus =
-      statusFilter === "all" || u.status === statusFilter
-    return matchSearch && matchStatus
-  })
+  // 검색 기능
+  const handleSearch = async (page: number = 1) => {
+    setLoading(true)
+    try {
+      const result = await searchService.searchUsers({
+        query: search,
+        filters: { status: statusFilter },
+        page: page,
+        pageSize: 10
+      })
+      setUsers(result.data)
+      setPagination({
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total
+      })
+      setCurrentPage(page)
+    } catch (error) {
+      console.error('사용자 검색 실패:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 검색어나 필터가 변경될 때마다 검색 실행
+  React.useEffect(() => {
+    setCurrentPage(1)
+    handleSearch(1)
+  }, [search, statusFilter])
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage: number) => {
+    handleSearch(newPage)
+  }
+
+  const handleSuspend = async (userId: number) => {
+    try {
+      // API 연동 시도
+      await usersApi.suspend(userId)
+      alert("사용자가 정지되었습니다.")
+      // 실제 구현에서는 데이터 다시 로드
+    } catch (error) {
+      // API 연동 실패 시 프론트 테스트
+      console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+      alert(`사용자 ID ${userId}를 정지합니다. (테스트 모드)`)
+    }
+  }
+
+  const handleUnsuspend = async (userId: number) => {
+    try {
+      // API 연동 시도
+      await usersApi.unsuspend(userId)
+      alert("사용자 정지가 해제되었습니다.")
+      // 실제 구현에서는 데이터 다시 로드
+    } catch (error) {
+      // API 연동 실패 시 프론트 테스트
+      console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+      alert(`사용자 ID ${userId}의 정지를 해제합니다. (테스트 모드)`)
+    }
+  }
+
+  const handleDeleteClick = (userId: number) => {
+    setDeleteConfirmUserId(userId)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirmUserId) {
+      try {
+        // API 연동 시도
+        await usersApi.delete(deleteConfirmUserId)
+        alert("사용자가 삭제되었습니다.")
+        setDeleteConfirmUserId(null)
+        // 실제 구현에서는 데이터 다시 로드
+      } catch (error) {
+        // API 연동 실패 시 프론트 테스트
+        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        alert(`사용자 ID ${deleteConfirmUserId}를 삭제합니다. (테스트 모드)`)
+        setDeleteConfirmUserId(null)
+      }
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmUserId(null)
+  }
 
   return (
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex items-center gap-3">
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm h-9 px-4">
-          <Plus className="h-4 w-4 mr-1.5" />
-          사용자 추가
-        </Button>
-        <Button variant="outline" className="text-sm h-9 px-4">
-          <Download className="h-4 w-4 mr-1.5" />
-          내보내기
-        </Button>
+        {/* 사용자 추가 및 내보내기 버튼 제거됨 */}
       </div>
 
       {/* Filters */}
@@ -110,10 +167,6 @@ export function UsersPage() {
             <SelectItem value="정지">정지</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" className="h-9 px-3 text-sm text-gray-600">
-          <Calendar className="h-4 w-4 mr-1.5" />
-          날짜 선택
-        </Button>
       </div>
 
       {/* Table */}
@@ -132,7 +185,7 @@ export function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((user) => (
+            {users.map((user: MockUser) => (
               <TableRow key={user.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                 <TableCell className="px-5 py-4 text-sm font-medium text-blue-600">{user.id}</TableCell>
                 <TableCell className="px-5 py-4 text-sm text-gray-800 font-medium">{user.username}</TableCell>
@@ -146,13 +199,13 @@ export function UsersPage() {
                 <TableCell className="px-5 py-4 text-sm">
                   {user.status === "활성" ? (
                     <span className="flex gap-3">
-                      <button className="text-orange-500 hover:text-orange-600 font-medium">정지</button>
-                      <button className="text-red-500 hover:text-red-600 font-medium">삭제</button>
+                      <button className="text-orange-500 hover:text-orange-600 font-medium" onClick={() => handleSuspend(user.id)}>정지</button>
+                      <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                     </span>
                   ) : (
                     <span className="flex gap-3">
-                      <button className="text-blue-500 hover:text-blue-600 font-medium">해제</button>
-                      <button className="text-red-500 hover:text-red-600 font-medium">삭제</button>
+                      <button className="text-blue-500 hover:text-blue-600 font-medium" onClick={() => handleUnsuspend(user.id)}>해제</button>
+                      <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                     </span>
                   )}
                 </TableCell>
@@ -160,12 +213,79 @@ export function UsersPage() {
             ))}
           </TableBody>
         </Table>
-        {filtered.length === 0 && (
+        {users.length === 0 && (
           <div className="py-16 text-center text-sm text-gray-400">
             검색 결과가 없습니다.
           </div>
         )}
+
+        {/* 페이징 */}
+        {pagination.total > 0 && (
+          <div className="flex items-center justify-between px-2 py-4">
+            <div className="text-sm text-gray-700">
+              총 {pagination.total}개 중 {((currentPage - 1) * pagination.pageSize) + 1}-{Math.min(currentPage * pagination.pageSize, pagination.total)}개 표시
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              
+              {Array.from({ length: Math.ceil(pagination.total / pagination.pageSize) }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    currentPage === page
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === Math.ceil(pagination.total / pagination.pageSize)}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {deleteConfirmUserId && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">사용자 삭제</h3>
+            <p className="text-gray-600 mb-6">
+              정말로 이 사용자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleDeleteCancel}
+                variant="outline"
+                className="px-4 py-2"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleDeleteConfirm}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2"
+              >
+                삭제
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
