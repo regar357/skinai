@@ -4,10 +4,10 @@
  * ═══════════════════════════════════════════════
  * 
  * API 목록:
- *   GET /api/monitoring/ai-logs       - AI 진단 모니터링 (분석 로그 조회)
- *   GET /api/monitoring/ai-logs/:id   - 진단별 로그 조회
- *   GET /api/monitoring/dashboard     - 대시보드 (서비스 상태 + 사용자 통계)
- *   GET /api/monitoring/health-check  - 전체 서비스 헬스체크
+ *   GET /api/v1/monitoring/ai-logs       - AI 진단 모니터링 (분석 로그 조회)
+ *   GET /api/v1/monitoring/ai-logs/:id   - 진단별 로그 조회
+ *   GET /api/v1/monitoring/dashboard     - 대시보드 (서비스 상태 + 사용자 통계)
+ *   GET /api/v1/monitoring/health-check  - 전체 서비스 헬스체크
  */
 class MonitoringController {
   constructor(monitoringClient, pool) {

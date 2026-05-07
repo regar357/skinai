@@ -10,7 +10,7 @@
  */
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Auth, DomainError } = require("../domain/Auth");
+const { Auth, DomainError } = require("../domain/entities/Auth");
 
 const JWT_SECRET = process.env.JWT_SECRET || "1234";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "2h";
@@ -20,7 +20,7 @@ class AuthService {
 
   // ─────────────────────────────────────────────
   // 기능 1: 서비스 가입신청
-  // POST /api/auth/register
+  // POST /api/v1/auth/register
   // ─────────────────────────────────────────────
   async register({ email, password, name }) {
     // 도메인 규칙 검증
@@ -56,7 +56,7 @@ class AuthService {
 
   // ─────────────────────────────────────────────
   // 기능 2: 로그인 (JWT 발급)
-  // POST /api/auth/login
+  // POST /api/v1/auth/login
   // ─────────────────────────────────────────────
   async login({ email, password }) {
     if (!email || !password) throw new DomainError("이메일과 비밀번호를 입력해주세요.");
@@ -81,7 +81,7 @@ class AuthService {
 
   // ─────────────────────────────────────────────
   // 기능 3: 로그아웃
-  // POST /api/auth/logout
+  // POST /api/v1/auth/logout
   // - 클라이언트 측에서 토큰 삭제로 처리
   // ─────────────────────────────────────────────
   async logout() {

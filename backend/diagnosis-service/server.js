@@ -27,8 +27,10 @@ const port = process.env.PORT || 3004;
 app.use(cors());
 app.use(express.json());
 
-app.get("/health", (req, res) => res.json({ status: "UP", service: "diagnosis-service" }));
-app.use("/api/diagnoses", createDiagnosisRoutes(diagnosisController, authenticate, requireAdmin));
+app.get("/health", (req, res) => {
+  res.json({ status: "UP", service: "diagnosis-service", timestamp: new Date().toISOString() });
+});
+app.use("/api/v1/diagnoses", createDiagnosisRoutes(diagnosisController, authenticate, requireAdmin));
 
 app.use((err, req, res, next) => {
   console.error(`[diagnosis-service] ${req.method} ${req.originalUrl}`, err.message);

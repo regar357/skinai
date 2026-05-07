@@ -3,8 +3,8 @@
  * Hospital Repository MySQL 구현체 (인프라 계층)
  * ═══════════════════════════════════════════════
  */
-const HospitalRepository = require("../../domain/HospitalRepository");
-const { Hospital } = require("../../domain/Hospital");
+const HospitalRepository = require("../../domain/interfaces/HospitalRepository");
+const { Hospital } = require("../../domain/entities/Hospital");
 
 class HospitalRepositoryImpl extends HospitalRepository {
   constructor(pool) { super(); this.pool = pool; }

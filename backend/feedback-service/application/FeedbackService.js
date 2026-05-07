@@ -1,4 +1,4 @@
-const { Feedback, DomainError } = require("../domain/Feedback");
+const { Feedback, DomainError } = require("../domain/entities/Feedback");
 
 /**
  * Feedback Application Service (응용 계층)

@@ -34,7 +34,7 @@ app.get("/health", (req, res) => {
 });
 
 // 라우트 등록
-app.use("/api/feedbacks", createFeedbackRoutes(feedbackController, authenticate));
+app.use("/api/v1/feedbacks", createFeedbackRoutes(feedbackController, authenticate));
 
 // 전역 에러 핸들링
 app.use((err, req, res, next) => {

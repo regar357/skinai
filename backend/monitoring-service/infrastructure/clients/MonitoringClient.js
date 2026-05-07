@@ -32,7 +32,7 @@ class MonitoringClient {
   // ── 분석 로그 데이터 조회 (AI 진단 모니터링) ──
   async getDiagnosisLogs(token, page = 1, limit = 20) {
     return this._request(
-      `${this.diagnosisServiceUrl}/api/diagnoses/logs?page=${page}&limit=${limit}`,
+      `${this.diagnosisServiceUrl}/api/v1/diagnoses/logs?page=${page}&limit=${limit}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }
@@ -40,7 +40,7 @@ class MonitoringClient {
   // ── 진단별 로그 조회 ──────────────────────────
   async getDiagnosisLogs(token, diagnosisId) {
     return this._request(
-      `${this.diagnosisServiceUrl}/api/diagnoses/${diagnosisId}/logs`,
+      `${this.diagnosisServiceUrl}/api/v1/diagnoses/${diagnosisId}/logs`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
   }

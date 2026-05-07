@@ -6,7 +6,7 @@
  * 서비스 통신(내부 API) - 다른 서비스들의 데이터를 집계/프록시
  * 
  * API 목록:
- *   GET /api/admin/overview - 전체 서비스 상태 개요
+ *   GET /api/v1/admin/overview - 전체 서비스 상태 개요
  */
 class AdminController {
   constructor(serviceClient) { this.serviceClient = serviceClient; }

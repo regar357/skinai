@@ -3,8 +3,8 @@
  * User Repository MySQL 구현체 (인프라 계층)
  * ═══════════════════════════════════════════════
  */
-const UserRepository = require("../../domain/UserRepository");
-const { User } = require("../../domain/User");
+const UserRepository = require("../../domain/interfaces/UserRepository");
+const { User } = require("../../domain/entities/User");
 
 class UserRepositoryImpl extends UserRepository {
   constructor(pool) { super(); this.pool = pool; }

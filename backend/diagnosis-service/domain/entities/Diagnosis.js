@@ -1,22 +1,15 @@
 /**
  * ═══════════════════════════════════════════════
- * Diagnosis Entity (도메인 계층)
+ * Diagnosis Entity (도메인 계층 - 엔티티)
  * ═══════════════════════════════════════════════
- * 
- * 분석 서비스 - 진단 관련 비즈니스 규칙
+ *
+ * 역할: Diagnosis 관련 비즈니스 규칙 담당
+ * 데이터 필드 정의는 DiagnosisModel에 위치 (이 클래스는 그것을 상속받음)
  */
-class Diagnosis {
-  constructor({ diagnosis_id, user_id, diagnosis_type, result_summary, image_url, ai_confidence, status, created_at }) {
-    this.diagnosis_id = diagnosis_id || null;
-    this.user_id = user_id;
-    this.diagnosis_type = diagnosis_type;
-    this.result_summary = result_summary || null;
-    this.image_url = image_url || null;
-    this.ai_confidence = ai_confidence || null;
-    this.status = status || "pending";
-    this.created_at = created_at || null;
-  }
+const DiagnosisModel = require("../models/DiagnosisModel");
+const DomainError = require("./DomainError");
 
+class Diagnosis extends DiagnosisModel {
   static validateType(type) {
     if (!["skin", "face"].includes(type)) throw new DomainError("진단 타입은 skin 또는 face여야 합니다.");
   }
@@ -31,14 +24,6 @@ class Diagnosis {
     this.status = "completed";
     this.result_summary = result_summary;
     this.ai_confidence = ai_confidence;
-  }
-}
-
-class DomainError extends Error {
-  constructor(message, statusCode = 400) {
-    super(message);
-    this.name = "DomainError";
-    this.statusCode = statusCode;
   }
 }
 

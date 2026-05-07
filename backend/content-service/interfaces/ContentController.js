@@ -5,18 +5,18 @@
  * 
  * API 목록:
  *   피부백과:
- *     GET    /api/content/encyclopedia          - 목록 조회
- *     GET    /api/content/encyclopedia/:id      - 상세 조회
- *     POST   /api/content/encyclopedia          - 등록 (관리자)
- *     PUT    /api/content/encyclopedia/:id      - 수정 (관리자)
- *     DELETE /api/content/encyclopedia/:id      - 삭제 (관리자)
+ *     GET    /api/v1/content/encyclopedia          - 목록 조회
+ *     GET    /api/v1/content/encyclopedia/:id      - 상세 조회
+ *     POST   /api/v1/content/encyclopedia          - 등록 (관리자)
+ *     PUT    /api/v1/content/encyclopedia/:id      - 수정 (관리자)
+ *     DELETE /api/v1/content/encyclopedia/:id      - 삭제 (관리자)
  *
  *   공지사항:
- *     GET    /api/content/notices               - 목록 조회
- *     GET    /api/content/notices/:id           - 상세 조회
- *     POST   /api/content/notices               - 등록 (관리자)
- *     PUT    /api/content/notices/:id           - 수정 (관리자)
- *     DELETE /api/content/notices/:id           - 삭제 (관리자)
+ *     GET    /api/v1/content/notices               - 목록 조회
+ *     GET    /api/v1/content/notices/:id           - 상세 조회
+ *     POST   /api/v1/content/notices               - 등록 (관리자)
+ *     PUT    /api/v1/content/notices/:id           - 수정 (관리자)
+ *     DELETE /api/v1/content/notices/:id           - 삭제 (관리자)
  */
 class ContentController {
   constructor(service) { this.service = service; }

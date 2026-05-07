@@ -26,8 +26,10 @@ const port = process.env.PORT || 3009;
 app.use(cors());
 app.use(express.json());
 
-app.get("/health", (req, res) => res.json({ status: "UP", service: "monitoring-service" }));
-app.use("/api/monitoring", createMonitoringRoutes(monitoringController, authenticate, requireAdmin));
+app.get("/health", (req, res) => {
+  res.json({ status: "UP", service: "monitoring-service", timestamp: new Date().toISOString() });
+});
+app.use("/api/v1/monitoring", createMonitoringRoutes(monitoringController, authenticate, requireAdmin));
 
 app.use((err, req, res, next) => {
   console.error(`[monitoring-service] ${req.method} ${req.originalUrl}`, err.message);

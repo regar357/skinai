@@ -4,8 +4,8 @@
  * ═══════════════════════════════════════════════
  * 
  * API 목록:
- *   GET /api/hospitals/search  - 병원 탐색
- *   GET /api/hospitals/:id     - 병원 상세 조회
+ *   GET /api/v1/hospitals/search  - 병원 탐색
+ *   GET /api/v1/hospitals/:id     - 병원 상세 조회
  */
 class HospitalController {
   constructor(hospitalService) { this.hospitalService = hospitalService; }

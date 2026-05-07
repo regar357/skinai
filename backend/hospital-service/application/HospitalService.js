@@ -7,7 +7,7 @@
  *   - 병원 탐색 (네이버 지도 API)
  *   - 병원 상세 조회
  */
-const { Hospital, DomainError } = require("../domain/Hospital");
+const { Hospital, DomainError } = require("../domain/entities/Hospital");
 
 class HospitalService {
   constructor(hospitalRepository) {

@@ -26,8 +26,10 @@ const port = process.env.PORT || 3002;
 app.use(cors());
 app.use(express.json());
 
-app.get("/health", (req, res) => res.json({ status: "UP", service: "auth-service" }));
-app.use("/api/auth", createAuthRoutes(authController, authenticate));
+app.get("/health", (req, res) => {
+  res.json({ status: "UP", service: "auth-service", timestamp: new Date().toISOString() });
+});
+app.use("/api/v1/auth", createAuthRoutes(authController, authenticate));
 
 app.use((err, req, res, next) => {
   console.error(`[auth-service] ${req.method} ${req.originalUrl}`, err.message);

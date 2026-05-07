@@ -5,11 +5,11 @@
  * 
  * diagnosis + image + share_link + log 통합 관리
  */
-const DiagnosisRepository = require("../../domain/DiagnosisRepository");
-const { Diagnosis } = require("../../domain/Diagnosis");
-const { ImageEntity } = require("../../domain/Image");
-const { ShareLink } = require("../../domain/ShareLink");
-const { DiagnosisLog } = require("../../domain/DiagnosisLog");
+const DiagnosisRepository = require("../../domain/interfaces/DiagnosisRepository");
+const { Diagnosis } = require("../../domain/entities/Diagnosis");
+const { Image } = require("../../domain/entities/Image");
+const { ShareLink } = require("../../domain/entities/ShareLink");
+const { DiagnosisLog } = require("../../domain/entities/DiagnosisLog");
 
 class DiagnosisRepositoryImpl extends DiagnosisRepository {
   constructor(pool) { super(); this.pool = pool; }
@@ -68,7 +68,7 @@ class DiagnosisRepositoryImpl extends DiagnosisRepository {
 
   async findImagesByDiagnosisId(diagnosisId) {
     const [rows] = await this.pool.execute("SELECT * FROM images WHERE diagnosis_id = ?", [diagnosisId]);
-    return rows.map(r => new ImageEntity(r));
+    return rows.map(r => new Image(r));
   }
 
   // ── 공유 링크 관련 ────────────────────────

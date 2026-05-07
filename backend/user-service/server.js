@@ -29,7 +29,7 @@ app.use(express.json());
 app.get("/health", (req, res) => {
   res.json({ status: "UP", service: "user-service", timestamp: new Date().toISOString() });
 });
-app.use("/api/users", createUserRoutes(userController, authenticate));
+app.use("/api/v1/users", createUserRoutes(userController, authenticate));
 
 app.use((err, req, res, next) => {
   console.error(`[user-service] ${req.method} ${req.originalUrl}`, err.message);

@@ -23,8 +23,10 @@ const port = process.env.PORT || 3008;
 app.use(cors());
 app.use(express.json());
 
-app.get("/health", (req, res) => res.json({ status: "UP", service: "admin-service" }));
-app.use("/api/admin", createAdminRoutes(adminController, authenticate, requireAdmin));
+app.get("/health", (req, res) => {
+  res.json({ status: "UP", service: "admin-service", timestamp: new Date().toISOString() });
+});
+app.use("/api/v1/admin", createAdminRoutes(adminController, authenticate, requireAdmin));
 
 app.use((err, req, res, next) => {
   console.error(`[admin-service] ${req.method} ${req.originalUrl}`, err.message);

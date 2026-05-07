@@ -3,7 +3,7 @@
  * User Controller (인터페이스 계층)
  * ═══════════════════════════════════════════════
  * 
- * API: DELETE /api/users/me - 회원 탈퇴
+ * API: DELETE /api/v1/users/me - 회원 탈퇴
  */
 class UserController {
   constructor(userService) {

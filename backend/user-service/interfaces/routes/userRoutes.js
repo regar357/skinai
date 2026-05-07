@@ -4,7 +4,7 @@
  * ═══════════════════════════════════════════════
  * 
  * 엔드포인트:
- *   DELETE /api/users/me - 회원 탈퇴 (인증 필요)
+ *   DELETE /api/v1/users/me - 회원 탈퇴 (인증 필요)
  */
 const express = require("express");
 const router = express.Router();

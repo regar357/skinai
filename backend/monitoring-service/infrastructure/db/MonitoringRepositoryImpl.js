@@ -3,8 +3,8 @@
  * Monitoring Repository MySQL 구현체 (인프라 계층)
  * ═══════════════════════════════════════════════
  */
-const MonitoringRepository = require("../../domain/MonitoringRepository");
-const { ServiceSnapshot, DiagnosisStat } = require("../../domain/Monitoring");
+const MonitoringRepository = require("../../domain/interfaces/MonitoringRepository");
+const { ServiceSnapshot, DiagnosisStat } = require("../../domain/entities/Monitoring");
 
 class MonitoringRepositoryImpl extends MonitoringRepository {
   constructor(pool) { super(); this.pool = pool; }

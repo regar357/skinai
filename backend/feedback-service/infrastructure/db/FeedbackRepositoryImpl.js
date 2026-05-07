@@ -1,5 +1,5 @@
-const FeedbackRepository = require("../../domain/FeedbackRepository");
-const { Feedback } = require("../../domain/Feedback");
+const FeedbackRepository = require("../../domain/interfaces/FeedbackRepository");
+const { Feedback } = require("../../domain/entities/Feedback");
 
 /**
  * MySQL 기반 FeedbackRepository 구현체 (인프라 계층)

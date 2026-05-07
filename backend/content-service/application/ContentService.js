@@ -7,8 +7,8 @@
  *   - 피부백과 CRUD
  *   - 공지사항 CRUD
  */
-const { Encyclopedia, DomainError: EncError } = require("../domain/Encyclopedia");
-const { Notice, DomainError: NoticeError } = require("../domain/Notice");
+const { Encyclopedia, DomainError: EncError } = require("../domain/entities/Encyclopedia");
+const { Notice, DomainError: NoticeError } = require("../domain/entities/Notice");
 
 class ContentService {
   constructor(contentRepository) { this.contentRepository = contentRepository; }

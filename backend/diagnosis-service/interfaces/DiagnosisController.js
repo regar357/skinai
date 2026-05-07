@@ -4,14 +4,14 @@
  * ═══════════════════════════════════════════════
  * 
  * API 목록:
- *   POST   /api/diagnoses              - 진단 생성 (이미지 업로드 + 분석 요청)
- *   GET    /api/diagnoses/me            - 내 진단 목록
- *   GET    /api/diagnoses/shared/:token - 공유 링크로 결과 조회
- *   GET    /api/diagnoses/logs          - 분석 로그 조회 (관리자)
- *   GET    /api/diagnoses/:id           - 진단 상세 조회
- *   PUT    /api/diagnoses/:id/complete  - 분석 완료 처리 (AI 서비스 콜백)
- *   POST   /api/diagnoses/:id/share     - 공유 링크 생성
- *   GET    /api/diagnoses/:id/logs      - 진단별 로그 조회
+ *   POST   /api/v1/diagnoses              - 진단 생성 (이미지 업로드 + 분석 요청)
+ *   GET    /api/v1/diagnoses/me            - 내 진단 목록
+ *   GET    /api/v1/diagnoses/shared/:token - 공유 링크로 결과 조회
+ *   GET    /api/v1/diagnoses/logs          - 분석 로그 조회 (관리자)
+ *   GET    /api/v1/diagnoses/:id           - 진단 상세 조회
+ *   PUT    /api/v1/diagnoses/:id/complete  - 분석 완료 처리 (AI 서비스 콜백)
+ *   POST   /api/v1/diagnoses/:id/share     - 공유 링크 생성
+ *   GET    /api/v1/diagnoses/:id/logs      - 진단별 로그 조회
  */
 class DiagnosisController {
   constructor(service) { this.service = service; }

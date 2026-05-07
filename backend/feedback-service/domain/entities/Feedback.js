@@ -1,17 +1,15 @@
 /**
- * Feedback Entity (도메인 계층)
+ * ═══════════════════════════════════════════════
+ * Feedback Entity (도메인 계층 - 엔티티)
+ * ═══════════════════════════════════════════════
+ *
+ * 역할: Feedback 관련 비즈니스 규칙 담당
+ * 데이터 필드 정의는 FeedbackModel에 위치 (이 클래스는 그것을 상속받음)
  */
-class Feedback {
-  constructor({ feedback_id, diagnosis_id, user_id, rating, content, created_at, updated_at }) {
-    this.feedback_id = feedback_id || null;
-    this.diagnosis_id = diagnosis_id;
-    this.user_id = user_id;
-    this.rating = rating;
-    this.content = content || null;
-    this.created_at = created_at || null;
-    this.updated_at = updated_at || null;
-  }
+const FeedbackModel = require("../models/FeedbackModel");
+const DomainError = require("./DomainError");
 
+class Feedback extends FeedbackModel {
   // ── 비즈니스 규칙 ────────────────────────
 
   static validateRating(rating) {
@@ -44,14 +42,6 @@ class Feedback {
     if (content !== undefined) {
       this.content = content;
     }
-  }
-}
-
-class DomainError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "DomainError";
-    this.statusCode = 400;
   }
 }
 

@@ -4,9 +4,9 @@
  * ═══════════════════════════════════════════════
  * 
  * 엔드포인트:
- *   POST /api/auth/register  - 서비스 가입신청
- *   POST /api/auth/login     - 로그인
- *   POST /api/auth/logout    - 로그아웃 (인증 필요)
+ *   POST /api/v1/auth/register  - 서비스 가입신청
+ *   POST /api/v1/auth/login     - 로그인
+ *   POST /api/v1/auth/logout    - 로그아웃 (인증 필요)
  */
 const express = require("express");
 const router = express.Router();

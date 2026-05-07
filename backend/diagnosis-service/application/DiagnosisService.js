@@ -10,10 +10,10 @@
  *   - 분석 결과 공유 (공유 링크 생성)
  *   - 분석 로그 기록
  */
-const { Diagnosis, DomainError } = require("../domain/Diagnosis");
-const { ImageEntity } = require("../domain/Image");
-const { ShareLink } = require("../domain/ShareLink");
-const { DiagnosisLog } = require("../domain/DiagnosisLog");
+const { Diagnosis, DomainError } = require("../domain/entities/Diagnosis");
+const { Image } = require("../domain/entities/Image");
+const { ShareLink } = require("../domain/entities/ShareLink");
+const { DiagnosisLog } = require("../domain/entities/DiagnosisLog");
 const { v4: uuidv4 } = require("uuid");
 
 class DiagnosisService {
@@ -24,7 +24,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 진단 생성 + 이미지 저장 + AI 분석 요청
-  // POST /api/diagnoses
+  // POST /api/v1/diagnoses
   // ─────────────────────────────────────────────
   async createDiagnosis({ user_id, diagnosis_type, image_url }) {
     const diagnosis = Diagnosis.createNew({ user_id, diagnosis_type, image_url });
@@ -32,7 +32,7 @@ class DiagnosisService {
 
     // 이미지 메타데이터 저장
     if (image_url) {
-      const image = new ImageEntity({
+      const image = new Image({
         user_id,
         diagnosis_id: saved.diagnosis_id,
         original_url: image_url,
@@ -50,7 +50,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 진단 상세 조회
-  // GET /api/diagnoses/:id
+  // GET /api/v1/diagnoses/:id
   // ─────────────────────────────────────────────
   async getDiagnosisById(id, userId) {
     const d = await this.diagnosisRepository.findDiagnosisById(id);
@@ -64,7 +64,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 내 진단 목록 조회
-  // GET /api/diagnoses/me
+  // GET /api/v1/diagnoses/me
   // ─────────────────────────────────────────────
   async getMyDiagnoses(userId, page = 1, limit = 10) {
     const diagnoses = await this.diagnosisRepository.findDiagnosesByUserId(userId, page, limit);
@@ -74,7 +74,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 분석 완료 처리 (AI 서비스 콜백)
-  // PUT /api/diagnoses/:id/complete
+  // PUT /api/v1/diagnoses/:id/complete
   // ─────────────────────────────────────────────
   async completeDiagnosis(id, { result_summary, ai_confidence }) {
     const updated = await this.diagnosisRepository.updateDiagnosis(id, {
@@ -91,7 +91,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 분석 결과 공유 링크 생성
-  // POST /api/diagnoses/:id/share
+  // POST /api/v1/diagnoses/:id/share
   // ─────────────────────────────────────────────
   async createShareLink(diagnosisId, userId, expiresInHours = 72) {
     const d = await this.diagnosisRepository.findDiagnosisById(diagnosisId);
@@ -120,7 +120,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 공유 링크로 분석 결과 조회
-  // GET /api/diagnoses/shared/:token
+  // GET /api/v1/diagnoses/shared/:token
   // ─────────────────────────────────────────────
   async getDiagnosisByShareToken(token) {
     const link = await this.diagnosisRepository.findShareLinkByToken(token);
@@ -134,7 +134,7 @@ class DiagnosisService {
 
   // ─────────────────────────────────────────────
   // 분석 로그 조회 (모니터링용 - 내부 API)
-  // GET /api/diagnoses/logs
+  // GET /api/v1/diagnoses/logs
   // ─────────────────────────────────────────────
   async getLogs(page = 1, limit = 20) {
     const logs = await this.diagnosisRepository.findAllLogs(page, limit);

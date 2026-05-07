@@ -15,7 +15,7 @@ class DiagnosisClient {
    */
   async verifyDiagnosis(diagnosisId, userId, token) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/diagnoses/${diagnosisId}`, {
+      const response = await fetch(`${this.baseUrl}/api/v1/diagnoses/${diagnosisId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

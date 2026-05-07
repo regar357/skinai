@@ -3,8 +3,8 @@
  * Admin Repository MySQL 구현체 (인프라 계층)
  * ═══════════════════════════════════════════════
  */
-const AdminRepository = require("../../domain/AdminRepository");
-const { Admin } = require("../../domain/Admin");
+const AdminRepository = require("../../domain/interfaces/AdminRepository");
+const { Admin } = require("../../domain/entities/Admin");
 
 class AdminRepositoryImpl extends AdminRepository {
   constructor(pool) { super(); this.pool = pool; }

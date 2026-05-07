@@ -3,9 +3,9 @@
  * Content Repository MySQL 구현체 (인프라 계층)
  * ═══════════════════════════════════════════════
  */
-const ContentRepository = require("../../domain/ContentRepository");
-const { Encyclopedia } = require("../../domain/Encyclopedia");
-const { Notice } = require("../../domain/Notice");
+const ContentRepository = require("../../domain/interfaces/ContentRepository");
+const { Encyclopedia } = require("../../domain/entities/Encyclopedia");
+const { Notice } = require("../../domain/entities/Notice");
 
 class ContentRepositoryImpl extends ContentRepository {
   constructor(pool) { super(); this.pool = pool; }

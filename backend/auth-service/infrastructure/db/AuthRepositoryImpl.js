@@ -5,8 +5,8 @@
  * 
  * 역할: AuthRepository 인터페이스를 MySQL 쿼리로 구현
  */
-const AuthRepository = require("../../domain/AuthRepository");
-const { Auth } = require("../../domain/Auth");
+const AuthRepository = require("../../domain/interfaces/AuthRepository");
+const { Auth } = require("../../domain/entities/Auth");
 
 class AuthRepositoryImpl extends AuthRepository {
   constructor(pool) { super(); this.pool = pool; }

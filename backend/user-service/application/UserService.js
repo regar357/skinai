@@ -6,7 +6,7 @@
  * 기능: 회원 탈퇴 (소프트 삭제)
  */
 const bcrypt = require("bcryptjs");
-const { User, DomainError } = require("../domain/User");
+const { User, DomainError } = require("../domain/entities/User");
 
 class UserService {
   constructor(userRepository) {
@@ -15,7 +15,7 @@ class UserService {
 
   // ─────────────────────────────────────────────
   // 회원 탈퇴 (소프트 삭제)
-  // DELETE /api/users/me
+  // DELETE /api/v1/users/me
   // - 실제 데이터 삭제가 아닌 status를 'inactive'로 변경
   // ─────────────────────────────────────────────
   async deleteAccount(userId, password) {
