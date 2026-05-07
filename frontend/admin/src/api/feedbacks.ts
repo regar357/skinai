@@ -36,4 +36,18 @@ export const feedbacksApi = {
     return apiClient.get<any>('/feedbacks/stats');
   },
 
+  // 피드백 답변 (Admin 기능)
+  reply: (feedbackId: number, replyText: string): Promise<ApiResponse<Feedback>> => {
+    return apiClient.post<Feedback>(`/admin/feedbacks/${feedbackId}/reply`, {
+      reply_text: replyText
+    });
+  },
+
+  // 관리자용 피드백 목록 조회 (Admin 기능)
+  getAdminFeedbacks: (page = 1, limit = 10, status = ''): Promise<ApiResponse<PaginatedResponse<Feedback>>> => {
+    let url = `/admin/feedbacks?page=${page}&limit=${limit}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+    return apiClient.get<PaginatedResponse<Feedback>>(url);
+  },
+
   };

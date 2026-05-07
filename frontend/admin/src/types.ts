@@ -22,6 +22,18 @@ export interface AIAnalysisResult {
   created_at: string;
 }
 
+// 검사기록 탭에 맞는 타입
+export interface ExamRecord {
+  id: number;
+  username: string;
+  userId: string;
+  examDate: string;
+  examType: string;
+  result: string;
+  confidence: number;
+  imageId: string;
+}
+
 export interface Image {
   image_id: number;
   user_id: number;
@@ -45,18 +57,16 @@ export interface Feedback {
   analysis_id: number;
   content: string;
   rating: number;
+  status: 'pending' | 'answered';
   created_at: string;
+  admin_reply?: string;
 }
 
 export interface Disease {
-  disease_id: number;
-  name: string;
+  id: number;
+  title: string;
   description: string;
-  symptoms: string;
-  causes: string;
-  treatment: string;
-  prevention: string;
-  created_at: string;
+  modifiedDate: string;
 }
 
 export interface Notice {

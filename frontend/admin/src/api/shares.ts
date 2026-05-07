@@ -12,9 +12,9 @@ export const sharesApi = {
     return apiClient.get<Share>(`/shares/${token}`);
   },
 
-  // 공유 링크 삭제
-  delete: (shareId: number): Promise<ApiResponse<null>> => {
-    return apiClient.delete<null>(`/shares/${shareId}`);
+  // 공유 링크 삭제 (토큰 기반)
+  delete: (shareToken: string): Promise<ApiResponse<null>> => {
+    return apiClient.delete<null>(`/shares/${shareToken}`);
   },
 
   // 사용자별 공유 링크 목록 조회
