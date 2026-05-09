@@ -1,0 +1,15 @@
+{
+  "name": "skinai-dev",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n auth,user,diag,cont,hosp,feed,admin,mon,gw,mob,adm -c blue,green,yellow,magenta,cyan,red,white,gray,bgBlue,bgGreen,bgYellow \"cd backend/auth-service && npm run dev\" \"cd backend/user-service && npm run dev\" \"cd backend/diagnosis-service && npm run dev\" \"cd backend/content-service && npm run dev\" \"cd backend/hospital-service && npm run dev\" \"cd backend/feedback-service && npm run dev\" \"cd backend/admin-service && npm run dev\" \"cd backend/monitoring-service && npm run dev\" \"cd backend/api-gateway && npm run dev\" \"cd frontend/mobileweb && pnpm dev\" \"cd frontend/admin && cross-env PORT=3010 npm run dev\"",
+    "dev:backend": "concurrently -n auth,user,diag,cont,hosp,feed,admin,mon,gw -c blue,green,yellow,magenta,cyan,red,white,gray,bgBlue \"cd backend/auth-service && npm run dev\" \"cd backend/user-service && npm run dev\" \"cd backend/diagnosis-service && npm run dev\" \"cd backend/content-service && npm run dev\" \"cd backend/hospital-service && npm run dev\" \"cd backend/feedback-service && npm run dev\" \"cd backend/admin-service && npm run dev\" \"cd backend/monitoring-service && npm run dev\" \"cd backend/api-gateway && npm run dev\"",
+    "dev:mobile": "cd frontend/mobileweb && pnpm dev",
+    "dev:admin": "cd frontend/admin && cross-env PORT=3010 npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "cross-env": "^7.0.3"
+  }
+}
