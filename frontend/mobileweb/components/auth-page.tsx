@@ -21,29 +21,43 @@ export function AuthPage({ onLogin }: AuthPageProps) {
     setIsLoading(true)
 
     try {
-      const data =
-        mode === "login"
-          ? await authService.login({
-              email: form.email,
-              password: form.password,
-            })
-          : await authService.signup({
-              name: form.name,
-              email: form.email,
-              password: form.password,
-            })
+      if (mode === "login") {
+        const data = await authService.login({
+          email: form.email,
+          password: form.password,
+        })
 
-      onLogin({
-        name: data.user.name || form.name || "사용자",
-        email: data.user.email || form.email || "user@skinai.com",
-      })
+        onLogin({
+          name: data.user.name || form.name || "사용자",
+          email: data.user.email || form.email || "user@skinai.com",
+        })
+      } else {
+        // 회원가입
+        await authService.signup({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        })
+
+        // 회원가입 성공 후 로그인 모드로 전환
+        setMode("login")
+        setErrorMessage("회원가입이 완료되었습니다. 로그인해주세요.")
+        setForm({ ...form, password: "" }) // 비밀번호 필드 초기화
+      }
     } catch {
       // 백엔드 미연결 상태에서도 기존 목업 UX를 유지한다.
-      onLogin({
-        name: form.name || "사용자",
-        email: form.email || "user@skinai.com",
-      })
-      setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.")
+      if (mode === "login") {
+        onLogin({
+          name: form.name || "사용자",
+          email: form.email || "user@skinai.com",
+        })
+        setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.")
+      } else {
+        // 회원가입도 목업 처리
+        setMode("login")
+        setErrorMessage("백엔드 연결 전이라 목업 회원가입 후 로그인 화면으로 전환합니다.")
+        setForm({ ...form, password: "" }) // 비밀번호 필드 초기화
+      }
     } finally {
       setIsLoading(false)
     }

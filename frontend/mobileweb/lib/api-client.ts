@@ -40,18 +40,21 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
   if (!response.ok) {
     let error: ApiErrorResponse = {
-      code: `HTTP_${response.status}`,
-      message: "요청 처리 중 오류가 발생했습니다.",
+      success: false,
+      error: {
+        code: `HTTP_${response.status}`,
+        message: `서버 연결 오류 (${response.status}). 백엔드 서버가 실행 중인지 확인하세요.`,
+      },
     }
 
     try {
       const parsed = (await response.json()) as ApiErrorResponse
-      if (parsed?.message) error = parsed
+      if (parsed?.error?.message) error = parsed
     } catch {
       // Keep default error shape when server doesn't return JSON.
     }
 
-    throw new Error(error.message)
+    throw new Error(error.error.message)
   }
 
   if (response.status === 204) {

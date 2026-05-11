@@ -58,8 +58,7 @@ export const authService = {
 
     })
 
-    setStoredTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
-
+    // 회원가입 후 자동 로그인 방지를 위해 토큰 저장 제거
     return data
 
   },
