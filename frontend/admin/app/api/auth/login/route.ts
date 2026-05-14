@@ -1,60 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { User, LoginRequest, LoginResponse, ApiResponse } from '@/src/types';
+import { LoginRequest, LoginResponse, ApiResponse } from '@/src/types';
 
-// 임시 데이터 저장소
-const users: User[] = [
-  {
-    user_id: 1,
-    email: 'admin@example.com',
-    nickname: 'admin',
-    status: 'ACTIVE',
-    created_at: new Date().toISOString(),
-  },
-  {
-    user_id: 2,
-    email: 'user@example.com',
-    nickname: 'user',
-    status: 'ACTIVE',
-    created_at: new Date().toISOString(),
-  }
-];
-
-// 임시 토큰 생성 함수
-function generateToken(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api-gateway:3001/api/v1';
 
 export async function POST(request: NextRequest) {
   try {
     const body: LoginRequest = await request.json();
 
-    // 사용자 인증 (실제로는 비밀번호 해시 검증)
-    const user = users.find(u => u.email === body.email);
-    if (!user || user.status !== 'ACTIVE') {
+    // 실제 백엔드 API 호출
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid credentials'
-      } as ApiResponse<null>, { status: 401 });
+        error: data.error?.message || '로그인 실패'
+      } as ApiResponse<null>, { status: response.status });
     }
-
-    // 토큰 생성
-    const accessToken = generateToken();
-    const refreshToken = generateToken();
 
     return NextResponse.json({
       success: true,
-      data: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        user: user
-      } as LoginResponse,
+      data: data.data,
       message: 'Login successful'
     } as ApiResponse<LoginResponse>);
 
   } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json({
       success: false,
-      error: 'Internal server error'
+      error: '서버 연결 오류'
     } as ApiResponse<null>, { status: 500 });
   }
 }

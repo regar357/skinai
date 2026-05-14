@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react"
 import { Sparkles, Loader2, UploadCloud, X } from "lucide-react"
 import { diagnosisService } from "@/lib/api-services"
+import { NetworkError } from "@/lib/api-client"
 
 interface Ripple {
   id: number
@@ -25,6 +26,7 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showScanIndicator, setShowScanIndicator] = useState(false)
   const [ripples, setRipples] = useState<Ripple[]>([])
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -65,30 +67,33 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
     spawnRipple(e)
     setIsLoading(true)
     setShowScanIndicator(true)
+    setAnalyzeError(null)
 
     try {
-      if (selectedFile) {
-        const formData = new FormData()
-        formData.append("image", selectedFile)
-        const diagnosis = await diagnosisService.analyzeImage(formData)
-        if (imagePreview) {
-          onAnalysisComplete?.({
-            imagePreview,
-            diagnosisId: diagnosis.diagnosisId,
-            suspectedDisease: diagnosis.result?.suspectedDisease,
-            probability: diagnosis.result?.probability,
-          })
-        }
-        return
+      const formData = new FormData()
+      formData.append("image", selectedFile!)
+      const diagnosis = await diagnosisService.analyzeImage(formData)
+      // 백엔드 연결 성공 → 실제 진단 결과 사용
+      onAnalysisComplete?.({
+        imagePreview: imagePreview!,
+        diagnosisId: diagnosis.diagnosisId,
+        suspectedDisease: diagnosis.result?.suspectedDisease,
+        probability: diagnosis.result?.probability,
+      })
+    } catch (err) {
+      if (err instanceof NetworkError) {
+        // 백엔드 미연결 시 목업 처리
+        console.log("[SkinAI] 목업 진단입니다.")
+        onAnalysisComplete?.({ imagePreview: imagePreview! })
+      } else {
+        // 백엔드 연결됨 → 서버 응답 오류
+        setAnalyzeError(
+          err instanceof Error ? err.message : "진단 중 오류가 발생했습니다. 다시 시도해주세요."
+        )
       }
-    } catch {
-      // API 미연결 시에도 결과 화면 동선을 유지한다.
     } finally {
       setIsLoading(false)
       setShowScanIndicator(false)
-      if (imagePreview) {
-        onAnalysisComplete?.({ imagePreview })
-      }
     }
   }
 
@@ -180,7 +185,10 @@ export function HomePage({ onAnalysisComplete }: HomePageProps) {
             )}
           </button>
 
-          {/* Hint text */}
+          {/* Error message */}
+          {analyzeError && (
+            <p className="text-center text-sm text-red-500">{analyzeError}</p>
+          )}
         </div>
       </div>
     </div>

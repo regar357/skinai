@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { authService } from "@/lib/api-services";
+import { NetworkError } from "@/lib/api-client";
 
 interface AuthPageProps {
   onLogin: (user: { name: string; email: string }) => void;
@@ -53,21 +54,32 @@ export function AuthPage({ onLogin }: AuthPageProps) {
         setErrorMessage("회원가입이 완료되었습니다. 로그인해주세요.");
         setForm({ ...form, password: "" }); // 비밀번호 필드 초기화
       }
-    } catch {
-      // 백엔드 미연결 상태에서도 기존 목업 UX를 유지한다.
-      if (mode === "login") {
-        onLogin({
-          name: form.name || "사용자",
-          email: form.email || "user@skinai.com",
-        });
-        setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.");
+    } catch (err) {
+      console.log("[SkinAI] catch err:", err, "instanceof NetworkError:", err instanceof NetworkError);
+      if (err instanceof NetworkError) {
+        // 백엔드 미연결 시 목업 처리
+        if (mode === "login") {
+          console.log("[SkinAI] 목업 로그인입니다.");
+          onLogin({
+            name: form.name || "사용자",
+            email: form.email || "user@skinai.com",
+          });
+          setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.");
+        } else {
+          console.log("[SkinAI] 목업 회원가입입니다.");
+          setMode("login");
+          setErrorMessage(
+            "백엔드 연결 전이라 목업 회원가입 후 로그인 화면으로 전환합니다.",
+          );
+          setForm({ ...form, password: "" });
+        }
       } else {
-        // 회원가입도 목업 처리
-        setMode("login");
+        // 백엔드 연결됨 → 서버 응답 오류 (잘못된 아이디/비밀번호 등)
         setErrorMessage(
-          "백엔드 연결 전이라 목업 회원가입 후 로그인 화면으로 전환합니다.",
+          err instanceof Error
+            ? err.message
+            : "오류가 발생했습니다. 다시 시도해주세요.",
         );
-        setForm({ ...form, password: "" }); // 비밀번호 필드 초기화
       }
     } finally {
       setIsLoading(false);

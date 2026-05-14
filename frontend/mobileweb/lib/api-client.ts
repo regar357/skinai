@@ -1,5 +1,22 @@
 import type { ApiErrorResponse, AuthTokens } from "@/types/api";
 
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1";
 const ACCESS_TOKEN_KEY = "skinai_access_token";
@@ -34,13 +51,20 @@ export async function apiRequest<T>(
   const { skipAuth, headers, ...restOptions } = options;
   const token = getStoredTokens()?.accessToken;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
     ...restOptions,
-    headers: {
-      ...(headers || {}),
-      ...(skipAuth ? {} : token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+      headers: {
+        ...(headers || {}),
+        ...(skipAuth ? {} : token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  } catch (err) {
+    throw new NetworkError(
+      `백엔드 서버에 연결할 수 없습니다. (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
 
   if (!response.ok) {
     let error: ApiErrorResponse = {
@@ -58,7 +82,7 @@ export async function apiRequest<T>(
       // Keep default error shape when server doesn't return JSON.
     }
 
-    throw new Error(error.error.message);
+    throw new ApiError(error.error.message, response.status);
   }
 
   if (response.status === 204) {

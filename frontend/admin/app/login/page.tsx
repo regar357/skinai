@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Shield, User } from "lucide-react"
+import { authApi } from "@/src/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -23,26 +24,23 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // API 연동 전 개발용 - 무조건 로그인 성공
-      if (email && password) {
-        // Store authentication token in localStorage
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userNickname", "관리자")
-        router.push("/")
-      } else {
-        setError("이메일과 비밀번호를 입력해주세요")
+      // authApi 사용
+      const response = await authApi.adminLogin({ email, password })
+
+      if (!response.success || !response.data) {
+        setError(response.error?.message || '로그인 실패')
+        return
       }
+
+      // Store authentication token in localStorage
+      localStorage.setItem("access_token", response.data.access_token)
+      localStorage.setItem("refresh_token", response.data.refresh_token)
+      localStorage.setItem("isAuthenticated", "true")
+      localStorage.setItem("userEmail", response.data.user.email)
+      localStorage.setItem("userNickname", response.data.user.nickname)
+      router.push("/")
     } catch (err) {
-      // API 연동 실패 시에도 개발용으로 로그인 처리
-      if (email && password) {
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userNickname", "관리자")
-        router.push("/")
-      } else {
-        setError("이메일과 비밀번호를 입력해주세요")
-      }
+      setError("서버 연결 오류")
     } finally {
       setIsLoading(false)
     }
