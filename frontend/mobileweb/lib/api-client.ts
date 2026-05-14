@@ -1,6 +1,7 @@
 import type { ApiErrorResponse, AuthTokens } from "@/types/api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1";
 const ACCESS_TOKEN_KEY = "skinai_access_token";
 const REFRESH_TOKEN_KEY = "skinai_refresh_token";
 
