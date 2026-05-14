@@ -1,35 +1,74 @@
-version: '3.8'
+# ═══════════════════════════════════════════════════════════════════
+# SkinAI - 로컬 통합 실행 docker-compose
+# ═══════════════════════════════════════════════════════════════════
+#
+# 실행:
+#   docker compose up --build
+#
+# 접속:
+#   - 모바일 웹      : http://localhost:3000
+#   - 관리자 웹      : http://localhost:3010
+#   - API Gateway   : http://localhost:3001/api/v1
+#   - MySQL         : localhost:3306 (root / 1234)
+#
+# 모든 백엔드 서비스가 같은 JWT_SECRET 을 공유하도록 .env 의 JWT_SECRET
+# 값을 일치시킨다 (admin-service 가 auth-service 발급 토큰을 verify 해야
+# 하므로 필수).
+
+x-jwt-env: &jwt-env
+  JWT_SECRET: ${JWT_SECRET:-skinai-local-dev-secret-please-change-in-production}
+  JWT_EXPIRES_IN: 2h
+  JWT_REFRESH_EXPIRES_IN: 14d
+
+x-db-env: &db-env
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_USER: root
+  DB_PASSWORD: "1234"
 
 services:
-  # ── 프론트엔드 ─────────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
+  # ────────────────────────────────────────────
+  # MySQL (DB) - schema.sql 자동 적용
+  # ────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: skinai-mysql
     ports:
-      - "3000:3000"
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "1234"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - mysql_data:/var/lib/mysql
+      # 알파벳 순으로 실행되어 모든 서비스 DB 가 자동 생성된다
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1234"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  # ── API Gateway (3001) ─────────────────────
+  # ────────────────────────────────────────────
+  # API Gateway (3001) - 외부 진입점
+  # ────────────────────────────────────────────
   api-gateway:
     build:
       context: ./backend/api-gateway
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-api-gateway
     ports:
       - "3001:3001"
     environment:
-      - PORT=3001
-      - AUTH_SERVICE_URL=http://auth-service:3002
-      - USER_SERVICE_URL=http://user-service:3003
-      - DIAGNOSIS_SERVICE_URL=http://diagnosis-service:3004
-      - CONTENT_SERVICE_URL=http://content-service:3005
-      - HOSPITAL_SERVICE_URL=http://hospital-service:3006
-      - FEEDBACK_SERVICE_URL=http://feedback-service:3007
-      - ADMIN_SERVICE_URL=http://admin-service:3008
-      - MONITORING_SERVICE_URL=http://monitoring-service:3009
-      - AI_SERVICE_URL=http://ai:8001
+      <<: *jwt-env
+      PORT: 3001
+      AUTH_SERVICE_URL: http://auth-service:3002
+      USER_SERVICE_URL: http://user-service:3003
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+      CONTENT_SERVICE_URL: http://content-service:3005
+      HOSPITAL_SERVICE_URL: http://hospital-service:3006
+      FEEDBACK_SERVICE_URL: http://feedback-service:3007
+      ADMIN_SERVICE_URL: http://admin-service:3008
+      MONITORING_SERVICE_URL: http://monitoring-service:3009
+      AI_SERVICE_URL: http://ai:8001
     depends_on:
       - auth-service
       - user-service
@@ -40,159 +79,201 @@ services:
       - admin-service
       - monitoring-service
 
-  # ── 1. 인증 서비스 (3002) ──────────────────
+  # ────────────────────────────────────────────
+  # 1. 인증 서비스 (3002)
+  # ────────────────────────────────────────────
   auth-service:
     build:
       context: ./backend/auth-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-auth
     ports:
       - "3002:3002"
     environment:
-      - PORT=3002
-      - DB_HOST=mysql
-      - AUTH_DB_NAME=skinai_auth
+      <<: [*jwt-env, *db-env]
+      PORT: 3002
+      AUTH_DB_NAME: skinai_auth
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  # ── 2. 사용자 서비스 (3003) ────────────────
+  # ────────────────────────────────────────────
+  # 2. 사용자 서비스 (3003)
+  # ────────────────────────────────────────────
   user-service:
     build:
       context: ./backend/user-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-user
     ports:
       - "3003:3003"
     environment:
-      - PORT=3003
-      - DB_HOST=mysql
-      - USER_DB_NAME=skinai_user
+      <<: [*jwt-env, *db-env]
+      PORT: 3003
+      USER_DB_NAME: skinai_user
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  # ── 3. 분석 서비스 (3004) ──────────────────
+  # ────────────────────────────────────────────
+  # 3. 분석 서비스 (3004)
+  # ────────────────────────────────────────────
   diagnosis-service:
     build:
       context: ./backend/diagnosis-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-diagnosis
     ports:
       - "3004:3004"
     environment:
-      - PORT=3004
-      - DB_HOST=mysql
-      - DIAGNOSIS_DB_NAME=skinai_diagnosis
-      - AI_SERVICE_URL=http://ai:8001
+      <<: [*jwt-env, *db-env]
+      PORT: 3004
+      DIAGNOSIS_DB_NAME: skinai_diagnosis
+      AI_SERVICE_URL: http://ai:8001
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  # ── 4. 콘텐츠 서비스 (3005) ────────────────
+  # ────────────────────────────────────────────
+  # 4. 콘텐츠 서비스 (3005)
+  # ────────────────────────────────────────────
   content-service:
     build:
       context: ./backend/content-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-content
     ports:
       - "3005:3005"
     environment:
-      - PORT=3005
-      - DB_HOST=mysql
-      - CONTENT_DB_NAME=skinai_content
+      <<: [*jwt-env, *db-env]
+      PORT: 3005
+      CONTENT_DB_NAME: skinai_content
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  # ── 5. 병원 탐색 서비스 (3006) ─────────────
+  # ────────────────────────────────────────────
+  # 5. 병원 탐색 서비스 (3006)
+  # ────────────────────────────────────────────
   hospital-service:
     build:
       context: ./backend/hospital-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-hospital
     ports:
       - "3006:3006"
     environment:
-      - PORT=3006
-      - DB_HOST=mysql
-      - HOSPITAL_DB_NAME=skinai_hospital
+      <<: [*jwt-env, *db-env]
+      PORT: 3006
+      HOSPITAL_DB_NAME: skinai_hospital
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  # ── 6. 피드백 서비스 (3007) ────────────────
+  # ────────────────────────────────────────────
+  # 6. 피드백 서비스 (3007)
+  # ────────────────────────────────────────────
   feedback-service:
     build:
       context: ./backend/feedback-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-feedback
     ports:
       - "3007:3007"
     environment:
-      - PORT=3007
-      - DB_HOST=mysql
-      - FEEDBACK_DB_NAME=skinai_feedback
-      - DIAGNOSIS_SERVICE_URL=http://diagnosis-service:3004
+      <<: [*jwt-env, *db-env]
+      PORT: 3007
+      FEEDBACK_DB_NAME: skinai_feedback
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
     depends_on:
-      - mysql
-      - diagnosis-service
+      mysql:
+        condition: service_healthy
 
-  # ── 7. 관리자 서비스 (3008) ────────────────
+  # ────────────────────────────────────────────
+  # 7. 관리자 서비스 (3008)
+  # ────────────────────────────────────────────
   admin-service:
     build:
       context: ./backend/admin-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-admin
     ports:
       - "3008:3008"
     environment:
-      - PORT=3008
-      - DB_HOST=mysql
-      - ADMIN_DB_NAME=skinai_admin
-      - USER_SERVICE_URL=http://user-service:3003
-      - DIAGNOSIS_SERVICE_URL=http://diagnosis-service:3004
-      - CONTENT_SERVICE_URL=http://content-service:3005
-      - FEEDBACK_SERVICE_URL=http://feedback-service:3007
+      <<: [*jwt-env, *db-env]
+      PORT: 3008
+      ADMIN_DB_NAME: skinai_admin
+      AUTH_SERVICE_URL: http://auth-service:3002
+      USER_SERVICE_URL: http://user-service:3003
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+      CONTENT_SERVICE_URL: http://content-service:3005
+      FEEDBACK_SERVICE_URL: http://feedback-service:3007
+      MONITORING_SERVICE_URL: http://monitoring-service:3009
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  # ── 8. 모니터링-대시보드 서비스 (3009) ─────
+  # ────────────────────────────────────────────
+  # 8. 모니터링 서비스 (3009)
+  # ────────────────────────────────────────────
   monitoring-service:
     build:
       context: ./backend/monitoring-service
       dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-monitoring
     ports:
       - "3009:3009"
     environment:
-      - PORT=3009
-      - DB_HOST=mysql
-      - MONITORING_DB_NAME=skinai_monitoring
-      - DIAGNOSIS_SERVICE_URL=http://diagnosis-service:3004
-      - USER_SERVICE_URL=http://user-service:3003
+      <<: [*jwt-env, *db-env]
+      PORT: 3009
+      MONITORING_DB_NAME: skinai_monitoring
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+      USER_SERVICE_URL: http://user-service:3003
     depends_on:
-      - mysql
-      - diagnosis-service
+      mysql:
+        condition: service_healthy
 
-  # ── 9. AI 진단 서버 (8001) ─────────────────
+  # ────────────────────────────────────────────
+  # 9. AI 진단 서버 (8001) - 옵셔널
+  # ────────────────────────────────────────────
   ai:
     build:
       context: ./ai
       dockerfile: ../docker/Dockerfile.ai
+    container_name: skinai-ai
     ports:
       - "8001:8001"
-    volumes:
-      - ./ai:/app
 
-  # ── MySQL ──────────────────────────────────
-  mysql:
-    image: mysql:8.0
+  # ────────────────────────────────────────────
+  # 모바일 프론트엔드 (3000)
+  # ────────────────────────────────────────────
+  mobileweb:
+    build:
+      context: ./frontend/mobileweb
+      dockerfile: ../../docker/Dockerfile.mobileweb
+    container_name: skinai-mobileweb
     ports:
-      - "3306:3306"
+      - "3000:3000"
     environment:
-      - MYSQL_ROOT_PASSWORD=1234
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-  # ── Nginx ──────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      # 브라우저에서 호출하므로 host 머신 기준 URL
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
     depends_on:
-      - frontend
       - api-gateway
-      - ai
+
+  # ────────────────────────────────────────────
+  # 관리자 프론트엔드 (3010)
+  # ────────────────────────────────────────────
+  admin-web:
+    build:
+      context: ./frontend/admin
+      dockerfile: ../../docker/Dockerfile.admin-web
+    container_name: skinai-admin-web
+    ports:
+      - "3010:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api/v1
+    depends_on:
+      - api-gateway
 
 volumes:
   mysql_data:

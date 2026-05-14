@@ -29,7 +29,11 @@ class FeedbackController {
     try {
       const page = parseInt(req.query.page, 10) || 1;
       const limit = parseInt(req.query.limit, 10) || 10;
-      const result = await this.feedbackService.getMyFeedbacks(req.user.userId, page, limit);
+      const result = await this.feedbackService.getMyFeedbacks(
+        req.user.userId,
+        page,
+        limit,
+      );
       return res.status(200).json({
         success: true,
         message: "피드백 목록 조회 성공",
@@ -45,7 +49,7 @@ class FeedbackController {
     try {
       const feedback = await this.feedbackService.getFeedbackById(
         req.params.feedback_id,
-        req.user.userId
+        req.user.userId,
       );
       return res.status(200).json({
         success: true,
@@ -61,7 +65,7 @@ class FeedbackController {
     try {
       const feedback = await this.feedbackService.getFeedbackByDiagnosis(
         req.params.diagnosis_id,
-        req.user.userId
+        req.user.userId,
       );
       return res.status(200).json({
         success: true,
@@ -78,7 +82,7 @@ class FeedbackController {
       await this.feedbackService.updateFeedback(
         req.params.feedback_id,
         req.user.userId,
-        req.body
+        req.body,
       );
       return res.status(200).json({
         success: true,
@@ -89,12 +93,9 @@ class FeedbackController {
     }
   };
 
-  deleteFeedback = async (req, res, next) => {
+  deleteMyFeedback = async (req, res, next) => {
     try {
-      await this.feedbackService.deleteFeedback(
-        req.params.feedback_id,
-        req.user.userId
-      );
+      await this.feedbackService.deleteFeedback(req.params.id, req.user.userId);
       return res.status(200).json({
         success: true,
         message: "피드백이 삭제되었습니다.",

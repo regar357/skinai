@@ -1,13 +1,13 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
+# 캐시 친화: package*.json 먼저 복사
 COPY package*.json ./
+RUN npm install --legacy-peer-deps
 
-RUN npm install
-
+# 소스 복사
 COPY . .
 
-EXPOSE 3001
-
-CMD ["npm", "start"]
+# 각 서비스마다 포트가 다르므로 EXPOSE 는 compose 에서 ports 로 처리
+CMD ["node", "server.js"]

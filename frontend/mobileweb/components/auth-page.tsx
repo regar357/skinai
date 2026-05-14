@@ -1,48 +1,57 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Mail, Lock, User, Eye, EyeOff, Loader2, ScanFace, Sparkles } from "lucide-react"
-import { authService } from "@/lib/api-services"
+import { useState } from "react";
+import {
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  Loader2,
+  ScanFace,
+  Sparkles,
+} from "lucide-react";
+import { authService } from "@/lib/api-services";
 
 interface AuthPageProps {
-  onLogin: (user: { name: string; email: string }) => void
+  onLogin: (user: { name: string; email: string }) => void;
 }
 
 export function AuthPage({ onLogin }: AuthPageProps) {
-  const [mode, setMode] = useState<"login" | "signup">("login")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [form, setForm] = useState({ name: "", email: "", password: "" })
-  const [errorMessage, setErrorMessage] = useState("")
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMessage("")
-    setIsLoading(true)
+    e.preventDefault();
+    setErrorMessage("");
+    setIsLoading(true);
 
     try {
       if (mode === "login") {
         const data = await authService.login({
           email: form.email,
           password: form.password,
-        })
+        });
 
         onLogin({
           name: data.user.name || form.name || "사용자",
           email: data.user.email || form.email || "user@skinai.com",
-        })
+        });
       } else {
         // 회원가입
         await authService.signup({
           name: form.name,
           email: form.email,
           password: form.password,
-        })
+        });
 
         // 회원가입 성공 후 로그인 모드로 전환
-        setMode("login")
-        setErrorMessage("회원가입이 완료되었습니다. 로그인해주세요.")
-        setForm({ ...form, password: "" }) // 비밀번호 필드 초기화
+        setMode("login");
+        setErrorMessage("회원가입이 완료되었습니다. 로그인해주세요.");
+        setForm({ ...form, password: "" }); // 비밀번호 필드 초기화
       }
     } catch {
       // 백엔드 미연결 상태에서도 기존 목업 UX를 유지한다.
@@ -50,18 +59,20 @@ export function AuthPage({ onLogin }: AuthPageProps) {
         onLogin({
           name: form.name || "사용자",
           email: form.email || "user@skinai.com",
-        })
-        setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.")
+        });
+        setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.");
       } else {
         // 회원가입도 목업 처리
-        setMode("login")
-        setErrorMessage("백엔드 연결 전이라 목업 회원가입 후 로그인 화면으로 전환합니다.")
-        setForm({ ...form, password: "" }) // 비밀번호 필드 초기화
+        setMode("login");
+        setErrorMessage(
+          "백엔드 연결 전이라 목업 회원가입 후 로그인 화면으로 전환합니다.",
+        );
+        setForm({ ...form, password: "" }); // 비밀번호 필드 초기화
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center px-6 py-12">
@@ -79,8 +90,12 @@ export function AuthPage({ onLogin }: AuthPageProps) {
             <ScanFace className="h-10 w-10 text-white" strokeWidth={1.5} />
           </div>
           <div className="text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">SkinAI</h1>
-            <p className="mt-1 text-base text-muted-foreground">AI 기반 피부 진단 서비스</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+              SkinAI
+            </h1>
+            <p className="mt-1 text-base text-muted-foreground">
+              AI 기반 피부 진단 서비스
+            </p>
           </div>
         </div>
 
@@ -139,7 +154,11 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
               </button>
             </div>
 
@@ -160,11 +179,17 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               )}
             </button>
           </form>
-          {errorMessage && <p className="mt-3 text-center text-sm text-amber-600">{errorMessage}</p>}
+          {errorMessage && (
+            <p className="mt-3 text-center text-sm text-amber-600">
+              {errorMessage}
+            </p>
+          )}
 
           {/* Toggle mode */}
           <p className="mt-6 text-center text-lg text-muted-foreground">
-            {mode === "login" ? "계정이 없으신가요?" : "이미 계정이 있으신가요?"}{" "}
+            {mode === "login"
+              ? "계정이 없으신가요?"
+              : "이미 계정이 있으신가요?"}{" "}
             <button
               type="button"
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
@@ -192,5 +217,5 @@ export function AuthPage({ onLogin }: AuthPageProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -2,19 +2,23 @@
  * ═══════════════════════════════════════════════
  * Analysis Controller (인터페이스 계층)
  * ═══════════════════════════════════════════════
- * 
+ *
  * API 목록:
  *   POST   /api/v1/diagnoses              - 진단 생성 (이미지 업로드 + 분석 요청)
- *   GET    /api/v1/diagnoses/me            - 내 진단 목록
+ *   GET    /api/v1/diagnoses/history       - 내 진단 이력
  *   GET    /api/v1/diagnoses/shared/:token - 공유 링크로 결과 조회
  *   GET    /api/v1/diagnoses/logs          - 분석 로그 조회 (관리자)
  *   GET    /api/v1/diagnoses/:id           - 진단 상세 조회
+ *   DELETE /api/v1/diagnoses/:id           - 진단 단건 삭제
+ *   DELETE /api/v1/diagnoses               - 진단 다건 삭제 ({ ids: [] })
  *   PUT    /api/v1/diagnoses/:id/complete  - 분석 완료 처리 (AI 서비스 콜백)
  *   POST   /api/v1/diagnoses/:id/share     - 공유 링크 생성
  *   GET    /api/v1/diagnoses/:id/logs      - 진단별 로그 조회
  */
 class DiagnosisController {
-  constructor(service) { this.service = service; }
+  constructor(service) {
+    this.service = service;
+  }
 
   // ── 진단 생성 ────────────────────────────
   create = async (req, res, next) => {
@@ -23,51 +27,132 @@ class DiagnosisController {
         user_id: req.user.userId,
         ...req.body,
       });
-      res.status(201).json({ success: true, message: "진단 요청이 생성되었습니다.", data: result });
-    } catch (e) { next(e); }
+      res
+        .status(201)
+        .json({
+          success: true,
+          message: "진단 요청이 생성되었습니다.",
+          data: result,
+        });
+    } catch (e) {
+      next(e);
+    }
   };
 
   // ── 진단 상세 조회 ──────────────────────
   getById = async (req, res, next) => {
     try {
-      const result = await this.service.getDiagnosisById(req.params.id, req.user.userId);
+      const result = await this.service.getDiagnosisById(
+        req.params.id,
+        req.user.userId,
+      );
       res.status(200).json({ success: true, data: result });
-    } catch (e) { next(e); }
+    } catch (e) {
+      next(e);
+    }
   };
 
-  // ── 내 진단 목록 ────────────────────────
+  // ── 내 진단 이력 (구 /me, 현 /history) ─
   getMyList = async (req, res, next) => {
     try {
       const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const result = await this.service.getMyDiagnoses(req.user.userId, page, limit);
-      res.status(200).json({ success: true, data: result.diagnoses, pagination: result.pagination });
-    } catch (e) { next(e); }
+      const limit = parseInt(req.query.size) || parseInt(req.query.limit) || 10;
+      const result = await this.service.getMyDiagnoses(
+        req.user.userId,
+        page,
+        limit,
+      );
+      res
+        .status(200)
+        .json({
+          success: true,
+          data: result.diagnoses,
+          pagination: result.pagination,
+        });
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  // ── 진단 단건 삭제 ──────────────────────
+  deleteOne = async (req, res, next) => {
+    try {
+      await this.service.deleteDiagnosis(req.params.id, req.user.userId);
+      res
+        .status(200)
+        .json({ success: true, message: "진단이 삭제되었습니다." });
+    } catch (e) {
+      next(e);
+    }
+  };
+
+  // ── 진단 다건 삭제 ──────────────────────
+  deleteMany = async (req, res, next) => {
+    try {
+      const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+      if (ids.length === 0) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "삭제할 진단 ID 목록(ids)이 필요합니다.",
+          });
+      }
+      await this.service.deleteDiagnosesMany(ids, req.user.userId);
+      res
+        .status(200)
+        .json({
+          success: true,
+          message: `${ids.length}건의 진단이 삭제되었습니다.`,
+        });
+    } catch (e) {
+      next(e);
+    }
   };
 
   // ── 분석 완료 처리 ──────────────────────
   complete = async (req, res, next) => {
     try {
       await this.service.completeDiagnosis(req.params.id, req.body);
-      res.status(200).json({ success: true, message: "분석이 완료되었습니다." });
-    } catch (e) { next(e); }
+      res
+        .status(200)
+        .json({ success: true, message: "분석이 완료되었습니다." });
+    } catch (e) {
+      next(e);
+    }
   };
 
   // ── 공유 링크 생성 ──────────────────────
   createShare = async (req, res, next) => {
     try {
       const expiresInHours = req.body.expires_in_hours || 72;
-      const result = await this.service.createShareLink(req.params.id, req.user.userId, expiresInHours);
-      res.status(201).json({ success: true, message: "공유 링크가 생성되었습니다.", data: result });
-    } catch (e) { next(e); }
+      const result = await this.service.createShareLink(
+        req.params.id,
+        req.user.userId,
+        expiresInHours,
+      );
+      res
+        .status(201)
+        .json({
+          success: true,
+          message: "공유 링크가 생성되었습니다.",
+          data: result,
+        });
+    } catch (e) {
+      next(e);
+    }
   };
 
   // ── 공유 링크로 조회 ────────────────────
   getByShareToken = async (req, res, next) => {
     try {
-      const result = await this.service.getDiagnosisByShareToken(req.params.token);
+      const result = await this.service.getDiagnosisByShareToken(
+        req.params.token,
+      );
       res.status(200).json({ success: true, data: result });
-    } catch (e) { next(e); }
+    } catch (e) {
+      next(e);
+    }
   };
 
   // ── 분석 로그 조회 (관리자) ─────────────
@@ -76,8 +161,16 @@ class DiagnosisController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
       const result = await this.service.getLogs(page, limit);
-      res.status(200).json({ success: true, data: result.logs, pagination: result.pagination });
-    } catch (e) { next(e); }
+      res
+        .status(200)
+        .json({
+          success: true,
+          data: result.logs,
+          pagination: result.pagination,
+        });
+    } catch (e) {
+      next(e);
+    }
   };
 
   // ── 진단별 로그 조회 ────────────────────
@@ -85,7 +178,9 @@ class DiagnosisController {
     try {
       const logs = await this.service.getLogsByDiagnosisId(req.params.id);
       res.status(200).json({ success: true, data: logs });
-    } catch (e) { next(e); }
+    } catch (e) {
+      next(e);
+    }
   };
 }
 

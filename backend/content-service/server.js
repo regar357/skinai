@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════
  * Content Service - 진입점 (Composition Root)
  * ═══════════════════════════════════════════════
- * 
+ *
  * 포트: 3005
  * 통합: 피부백과 CRUD + 공지사항 CRUD
  */
@@ -11,10 +11,14 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./infrastructure/db/pool");
 const ContentRepositoryImpl = require("./infrastructure/db/ContentRepositoryImpl");
-const { authenticate, requireAdmin } = require("./infrastructure/middleware/auth");
+const {
+  authenticate,
+  requireAdmin,
+} = require("./infrastructure/middleware/auth");
 const ContentService = require("./application/ContentService");
 const ContentController = require("./interfaces/ContentController");
 const createContentRoutes = require("./interfaces/routes/contentRoutes");
+const { createNoticeRoutes, createEncyclopediaRoutes } = createContentRoutes;
 
 // 의존성 조립
 const contentRepository = new ContentRepositoryImpl(pool);
@@ -27,15 +31,44 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({ status: "UP", service: "content-service", timestamp: new Date().toISOString() });
+  res.json({
+    status: "UP",
+    service: "content-service",
+    timestamp: new Date().toISOString(),
+  });
 });
-app.use("/api/v1/content", createContentRoutes(contentController, authenticate, requireAdmin));
+app.use(
+  "/api/v1/content",
+  createContentRoutes(contentController, authenticate, requireAdmin),
+);
+
+// 프론트엔드 양식 정합: /api/v1/notices, /api/v1/encyclopedia 직접 노출
+app.use(
+  "/api/v1/notices",
+  createNoticeRoutes(contentController, authenticate, requireAdmin),
+);
+app.use(
+  "/api/v1/encyclopedia",
+  createEncyclopediaRoutes(contentController, authenticate, requireAdmin),
+);
 
 app.use((err, req, res, next) => {
-  console.error(`[content-service] ${req.method} ${req.originalUrl}`, err.message);
-  res.status(err.statusCode || 500).json({ success: false, message: err.statusCode ? err.message : "서버 내부 오류" });
+  console.error(
+    `[content-service] ${req.method} ${req.originalUrl}`,
+    err.message,
+  );
+  res
+    .status(err.statusCode || 500)
+    .json({
+      success: false,
+      message: err.statusCode ? err.message : "서버 내부 오류",
+    });
 });
-app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
+app.use((req, res) =>
+  res.status(404).json({ success: false, message: "Not Found" }),
+);
 
-app.listen(port, () => console.log(`[content-service] running on port ${port}`));
+app.listen(port, () =>
+  console.log(`[content-service] running on port ${port}`),
+);
 module.exports = app;

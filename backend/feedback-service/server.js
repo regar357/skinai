@@ -18,7 +18,10 @@ const createFeedbackRoutes = require("./interfaces/routes/feedbackRoutes");
 // ── 의존성 조립 (Composition Root) ──────────
 const feedbackRepository = new FeedbackRepositoryImpl(pool);
 const diagnosisClient = new DiagnosisClient();
-const feedbackService = new FeedbackService(feedbackRepository, diagnosisClient);
+const feedbackService = new FeedbackService(
+  feedbackRepository,
+  diagnosisClient,
+);
 const feedbackController = new FeedbackController(feedbackService);
 
 // ── Express 앱 설정 ─────────────────────────
@@ -30,23 +33,40 @@ app.use(express.json());
 
 // 헬스체크
 app.get("/health", (req, res) => {
-  res.json({ status: "UP", service: "feedback-service", timestamp: new Date().toISOString() });
+  res.json({
+    status: "UP",
+    service: "feedback-service",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // 라우트 등록
-app.use("/api/v1/feedbacks", createFeedbackRoutes(feedbackController, authenticate));
+app.use(
+  "/api/v1/feedback",
+  createFeedbackRoutes(feedbackController, authenticate),
+);
 
 // 전역 에러 핸들링
 app.use((err, req, res, next) => {
-  console.error(`[feedback-service] ${req.method} ${req.originalUrl}`, err.message);
+  console.error(
+    `[feedback-service] ${req.method} ${req.originalUrl}`,
+    err.message,
+  );
   const statusCode = err.statusCode || 500;
-  const message = err.statusCode ? err.message : "서버 내부 오류가 발생했습니다.";
+  const message = err.statusCode
+    ? err.message
+    : "서버 내부 오류가 발생했습니다.";
   res.status(statusCode).json({ success: false, message });
 });
 
 // 404
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Not Found: ${req.method} ${req.originalUrl}` });
+  res
+    .status(404)
+    .json({
+      success: false,
+      message: `Not Found: ${req.method} ${req.originalUrl}`,
+    });
 });
 
 app.listen(port, () => {
