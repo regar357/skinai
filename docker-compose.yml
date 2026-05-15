@@ -93,6 +93,7 @@ services:
       <<: [*jwt-env, *db-env]
       PORT: 3002
       AUTH_DB_NAME: skinai_auth
+      USER_SERVICE_URL: http://user-service:3003
     depends_on:
       mysql:
         condition: service_healthy
