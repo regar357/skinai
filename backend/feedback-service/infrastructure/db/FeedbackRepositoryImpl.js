@@ -15,7 +15,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
       `SELECT feedback_id, diagnosis_id, user_id, rating, content, created_at, updated_at
        FROM feedbacks
        WHERE feedback_id = ? AND user_id = ?`,
-      [feedbackId, userId]
+      [feedbackId, userId],
     );
     if (rows.length === 0) return null;
     return new Feedback(rows[0]);
@@ -29,7 +29,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
        WHERE user_id = ?
        ORDER BY created_at DESC
        LIMIT ? OFFSET ?`,
-      [userId, String(limit), String(offset)]
+      [userId, String(limit), String(offset)],
     );
     return rows.map((row) => new Feedback(row));
   }
@@ -39,7 +39,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
       `SELECT feedback_id, diagnosis_id, user_id, rating, content, created_at, updated_at
        FROM feedbacks
        WHERE diagnosis_id = ? AND user_id = ?`,
-      [diagnosisId, userId]
+      [diagnosisId, userId],
     );
     if (rows.length === 0) return null;
     return new Feedback(rows[0]);
@@ -48,7 +48,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
   async countByUserId(userId) {
     const [rows] = await this.pool.execute(
       "SELECT COUNT(*) as total FROM feedbacks WHERE user_id = ?",
-      [userId]
+      [userId],
     );
     return rows[0].total;
   }
@@ -57,7 +57,12 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
     const [result] = await this.pool.execute(
       `INSERT INTO feedbacks (diagnosis_id, user_id, rating, content, created_at, updated_at)
        VALUES (?, ?, ?, ?, NOW(), NOW())`,
-      [feedback.diagnosis_id, feedback.user_id, feedback.rating, feedback.content]
+      [
+        feedback.diagnosis_id,
+        feedback.user_id,
+        feedback.rating,
+        feedback.content,
+      ],
     );
     feedback.feedback_id = result.insertId;
     return feedback;
@@ -83,7 +88,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
 
     const [result] = await this.pool.execute(
       `UPDATE feedbacks SET ${updates.join(", ")} WHERE feedback_id = ? AND user_id = ?`,
-      params
+      params,
     );
     return result.affectedRows > 0;
   }
@@ -91,7 +96,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
   async delete(feedbackId, userId) {
     const [result] = await this.pool.execute(
       "DELETE FROM feedbacks WHERE feedback_id = ? AND user_id = ?",
-      [feedbackId, userId]
+      [feedbackId, userId],
     );
     return result.affectedRows > 0;
   }
@@ -99,7 +104,7 @@ class FeedbackRepositoryImpl extends FeedbackRepository {
   async existsByDiagnosisAndUser(diagnosisId, userId) {
     const [rows] = await this.pool.execute(
       "SELECT 1 FROM feedbacks WHERE diagnosis_id = ? AND user_id = ? LIMIT 1",
-      [diagnosisId, userId]
+      [diagnosisId, userId],
     );
     return rows.length > 0;
   }

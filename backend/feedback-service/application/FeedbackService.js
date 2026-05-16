@@ -12,10 +12,19 @@ class FeedbackService {
   // ── 피드백 작성 ───────────────────────────
   async createFeedback({ diagnosis_id, user_id, rating, content, token }) {
     // 도메인 규칙 검증 (팩토리 메서드 내부에서 수행)
-    const feedback = Feedback.createNew({ diagnosis_id, user_id, rating, content });
+    const feedback = Feedback.createNew({
+      diagnosis_id,
+      user_id,
+      rating,
+      content,
+    });
 
     // 진단 기록 존재 및 소유권 확인 (서비스 간 통신)
-    const diagnosis = await this.diagnosisClient.verifyDiagnosis(diagnosis_id, user_id, token);
+    const diagnosis = await this.diagnosisClient.verifyDiagnosis(
+      diagnosis_id,
+      user_id,
+      token,
+    );
 
     if (!diagnosis.exists) {
       const error = new DomainError("해당 진단 기록을 찾을 수 없습니다.");
@@ -24,15 +33,22 @@ class FeedbackService {
     }
 
     if (!diagnosis.owned) {
-      const error = new DomainError("본인의 진단 기록에만 피드백을 작성할 수 있습니다.");
+      const error = new DomainError(
+        "본인의 진단 기록에만 피드백을 작성할 수 있습니다.",
+      );
       error.statusCode = 403;
       throw error;
     }
 
     // 중복 피드백 방지
-    const exists = await this.feedbackRepository.existsByDiagnosisAndUser(diagnosis_id, user_id);
+    const exists = await this.feedbackRepository.existsByDiagnosisAndUser(
+      diagnosis_id,
+      user_id,
+    );
     if (exists) {
-      const error = new DomainError("이미 해당 진단에 대한 피드백을 작성하셨습니다.");
+      const error = new DomainError(
+        "이미 해당 진단에 대한 피드백을 작성하셨습니다.",
+      );
       error.statusCode = 409;
       throw error;
     }
@@ -49,7 +65,11 @@ class FeedbackService {
 
   // ── 내 피드백 목록 조회 ───────────────────
   async getMyFeedbacks(userId, page = 1, limit = 10) {
-    const feedbacks = await this.feedbackRepository.findByUserId(userId, page, limit);
+    const feedbacks = await this.feedbackRepository.findByUserId(
+      userId,
+      page,
+      limit,
+    );
     const total = await this.feedbackRepository.countByUserId(userId);
 
     return {
@@ -76,7 +96,10 @@ class FeedbackService {
 
   // ── 진단별 피드백 조회 ────────────────────
   async getFeedbackByDiagnosis(diagnosisId, userId) {
-    const feedback = await this.feedbackRepository.findByDiagnosisAndUser(diagnosisId, userId);
+    const feedback = await this.feedbackRepository.findByDiagnosisAndUser(
+      diagnosisId,
+      userId,
+    );
     if (!feedback) {
       const error = new DomainError("해당 진단에 대한 피드백이 없습니다.");
       error.statusCode = 404;

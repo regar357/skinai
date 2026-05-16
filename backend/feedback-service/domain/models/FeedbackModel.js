@@ -7,7 +7,15 @@
  * - 비즈니스 규칙 없음 (검증/동작 메서드는 Feedback 엔티티에 위치)
  */
 class FeedbackModel {
-  constructor({ feedback_id, diagnosis_id, user_id, rating, content, created_at, updated_at }) {
+  constructor({
+    feedback_id,
+    diagnosis_id,
+    user_id,
+    rating,
+    content,
+    created_at,
+    updated_at,
+  }) {
     this.feedback_id = feedback_id || null;
     this.diagnosis_id = diagnosis_id;
     this.user_id = user_id;
