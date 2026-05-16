@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════
  * Hospital Service - 진입점 (Composition Root)
  * ═══════════════════════════════════════════════
- * 
+ *
  * 포트: 3006
  * 기능: 병원 탐색 (네이버 지도 API), 병원 상세 조회
  */
@@ -27,15 +27,34 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({ status: "UP", service: "hospital-service", timestamp: new Date().toISOString() });
+  res.json({
+    status: "UP",
+    service: "hospital-service",
+    timestamp: new Date().toISOString(),
+  });
 });
-app.use("/api/v1/hospitals", createHospitalRoutes(hospitalController, authenticate));
+app.use(
+  "/api/v1/hospitals",
+  createHospitalRoutes(hospitalController, authenticate),
+);
 
 app.use((err, req, res, next) => {
-  console.error(`[hospital-service] ${req.method} ${req.originalUrl}`, err.message);
-  res.status(err.statusCode || 500).json({ success: false, message: err.statusCode ? err.message : "서버 내부 오류" });
+  console.error(
+    `[hospital-service] ${req.method} ${req.originalUrl}`,
+    err.message,
+  );
+  res
+    .status(err.statusCode || 500)
+    .json({
+      success: false,
+      message: err.statusCode ? err.message : "서버 내부 오류",
+    });
 });
-app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
+app.use((req, res) =>
+  res.status(404).json({ success: false, message: "Not Found" }),
+);
 
-app.listen(port, () => console.log(`[hospital-service] running on port ${port}`));
+app.listen(port, () =>
+  console.log(`[hospital-service] running on port ${port}`),
+);
 module.exports = app;

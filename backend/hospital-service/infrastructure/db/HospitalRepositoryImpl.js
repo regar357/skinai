@@ -7,10 +7,16 @@ const HospitalRepository = require("../../domain/interfaces/HospitalRepository")
 const { Hospital } = require("../../domain/entities/Hospital");
 
 class HospitalRepositoryImpl extends HospitalRepository {
-  constructor(pool) { super(); this.pool = pool; }
+  constructor(pool) {
+    super();
+    this.pool = pool;
+  }
 
   async findById(hospitalId) {
-    const [rows] = await this.pool.execute("SELECT * FROM hospitals WHERE hospital_id = ?", [hospitalId]);
+    const [rows] = await this.pool.execute(
+      "SELECT * FROM hospitals WHERE hospital_id = ?",
+      [hospitalId],
+    );
     return rows.length ? new Hospital(rows[0]) : null;
   }
 
@@ -30,19 +36,31 @@ class HospitalRepositoryImpl extends HospitalRepository {
     const params = [latitude, longitude, latitude, radius];
 
     if (keyword) {
-      query = query.replace("HAVING", "WHERE (name LIKE ? OR specialties LIKE ?) HAVING");
+      query = query.replace(
+        "HAVING",
+        "WHERE (name LIKE ? OR specialties LIKE ?) HAVING",
+      );
       params.splice(3, 0, `%${keyword}%`, `%${keyword}%`);
     }
 
     query += " ORDER BY distance LIMIT 20";
     const [rows] = await this.pool.execute(query, params);
-    return rows.map(r => new Hospital(r));
+    return rows.map((r) => new Hospital(r));
   }
 
   async save(hospital) {
     const [result] = await this.pool.execute(
       "INSERT INTO hospitals (name, address, phone, latitude, longitude, rating, open_hours, specialties, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-      [hospital.name, hospital.address, hospital.phone, hospital.latitude, hospital.longitude, hospital.rating, JSON.stringify(hospital.open_hours), hospital.specialties]
+      [
+        hospital.name,
+        hospital.address,
+        hospital.phone,
+        hospital.latitude,
+        hospital.longitude,
+        hospital.rating,
+        JSON.stringify(hospital.open_hours),
+        hospital.specialties,
+      ],
     );
     hospital.hospital_id = result.insertId;
     return hospital;
