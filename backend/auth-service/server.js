@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════
  * Auth Service - 진입점 (Composition Root)
  * ═══════════════════════════════════════════════
- * 
+ *
  * 포트: 3002
  * 기능: 서비스 가입신청, 로그인/로그아웃
  */
@@ -27,15 +27,26 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({ status: "UP", service: "auth-service", timestamp: new Date().toISOString() });
+  res.json({
+    status: "UP",
+    service: "auth-service",
+    timestamp: new Date().toISOString(),
+  });
 });
 app.use("/api/v1/auth", createAuthRoutes(authController, authenticate));
 
 app.use((err, req, res, next) => {
   console.error(`[auth-service] ${req.method} ${req.originalUrl}`, err.message);
-  res.status(err.statusCode || 500).json({ success: false, message: err.statusCode ? err.message : "서버 내부 오류" });
+  res
+    .status(err.statusCode || 500)
+    .json({
+      success: false,
+      message: err.statusCode ? err.message : "서버 내부 오류",
+    });
 });
-app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
+app.use((req, res) =>
+  res.status(404).json({ success: false, message: "Not Found" }),
+);
 
 app.listen(port, () => console.log(`[auth-service] running on port ${port}`));
 module.exports = app;
