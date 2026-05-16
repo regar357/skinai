@@ -1,69 +1,70 @@
-/**
- * ═══════════════════════════════════════════════
- * Monitoring Application Service (응용 계층)
- * ═══════════════════════════════════════════════
- * 
- * 기능:
- *   - AI 진단 모니터링 → 분석 로그 데이터 → 서비스 통신
- *   - 대시보드 → 사용자 정보 → 서비스 통신
- */
+const DEFAULT_STATUS = {
+  averageResponseTime: 0,
+  dailyRequests: 0,
+  errorRate: 0,
+  uptime: 0,
+};
+
 class MonitoringService {
-  constructor(monitoringClient, pool) {
-    this.monitoringClient = monitoringClient;
-    this.pool = pool;
+  constructor({ client, repository }) {
+    this.client = client;
+    this.repository = repository;
   }
 
-  // ── AI 진단 로그 조회 (서비스 통신) ───────
-  async getAiLogs(token, page, limit) {
-    return await this.monitoringClient.getDiagnosisLogs(token, page, limit);
+  async getPerformanceMetrics() {
+    const live = await this.client.getDiagnosisPerformance();
+    if (Array.isArray(live) && live.length) {
+      await this.repository.savePerformanceMetrics(live);
+      return live.map((m) => ({
+        month: m.month,
+        "정확도": Number(m.accuracy),
+        "정밀도": Number(m.precision),
+        "재현율": Number(m.recall),
+        "F1점수": Number(m.f1Score),
+      }));
+    }
+    return this.repository.getPerformanceMetrics();
   }
 
-  // ── 진단별 로그 조회 ──────────────────────
-  async getLogsByDiagnosis(token, diagnosisId) {
-    return await this.monitoringClient.getDiagnosisLogs(token, diagnosisId);
+  async getDiseaseAccuracy() {
+    const live = await this.client.getDiseaseAccuracy();
+    if (Array.isArray(live) && live.length) {
+      await this.repository.saveDiseaseAccuracy(live);
+      return live;
+    }
+    return this.repository.getDiseaseAccuracy();
   }
 
-  // ── 대시보드 데이터 조회 ──────────────────
-  async getDashboard() {
-    const [diagnosisHealth, userHealth] = await Promise.all([
-      this.monitoringClient.getDiagnosisHealth(),
-      this.monitoringClient.getUserHealth(),
+  async getSystemStatus() {
+    const [daily, aiStatus] = await Promise.all([
+      this.client.getDailySummary(),
+      this.client.getAiSystemStatus(),
     ]);
+    const live = {
+      averageResponseTime: Number(aiStatus?.averageResponseTime || 0),
+      dailyRequests: Number(daily?.dailyRequests || aiStatus?.dailyRequests || 0),
+      errorRate: Number(daily?.errorRate || aiStatus?.errorRate || 0),
+      uptime: Number(aiStatus?.uptime || 0),
+    };
 
-    let stats = [];
-    try {
-      const [rows] = await this.pool.execute(
-        "SELECT * FROM diagnosis_stats ORDER BY stat_date DESC LIMIT 7"
-      );
-      stats = rows;
-    } catch (err) {
-      console.warn("[monitoring-service] 통계 조회 실패:", err.message);
+    if (Object.values(live).some((v) => v > 0)) {
+      await this.repository.saveSystemStatus(live);
+      return live;
     }
 
-    return {
-      services: { diagnosis: diagnosisHealth, user: userHealth },
-      stats,
-      timestamp: new Date().toISOString(),
-    };
+    return (await this.repository.getSystemStatus()) || DEFAULT_STATUS;
   }
 
-  // ── 전체 서비스 헬스체크 ──────────────────
-  async healthCheckAll() {
-    const services = [
-      { name: "diagnosis-service", check: () => this.monitoringClient.getDiagnosisHealth() },
-      { name: "user-service", check: () => this.monitoringClient.getUserHealth() },
-    ];
-
-    return await Promise.all(
-      services.map(async (s) => {
-        const start = Date.now();
-        try {
-          const result = await s.check();
-          return { name: s.name, status: result.status || "UP", responseTime: Date.now() - start };
-        } catch {
-          return { name: s.name, status: "DOWN", responseTime: Date.now() - start };
-        }
-      })
+  async getModelInfo() {
+    return (
+      (await this.client.getAiModelInfo()) || {
+        modelVersion: process.env.AI_MODEL_VERSION || "unknown",
+        lastTrained: process.env.AI_MODEL_LAST_TRAINED || "unknown",
+        dataset: process.env.AI_MODEL_DATASET || "unknown",
+        architecture: process.env.AI_MODEL_ARCH || "YOLOv8",
+        inputSize: process.env.AI_MODEL_INPUT_SIZE || "unknown",
+        classes: process.env.AI_MODEL_CLASSES || "unknown",
+      }
     );
   }
 }

@@ -1,49 +1,108 @@
-/**
- * ═══════════════════════════════════════════════
- * Monitoring Repository MySQL 구현체 (인프라 계층)
- * ═══════════════════════════════════════════════
- */
 const MonitoringRepository = require("../../domain/interfaces/MonitoringRepository");
-const { ServiceSnapshot, DiagnosisStat } = require("../../domain/entities/Monitoring");
+
+const safe = async (fn, fallback) => {
+  try {
+    return await fn();
+  } catch (e) {
+    console.warn("[monitoring-service] repository fallback:", e.code || e.message);
+    return fallback;
+  }
+};
 
 class MonitoringRepositoryImpl extends MonitoringRepository {
-  constructor(pool) { super(); this.pool = pool; }
-
-  async saveSnapshot(snapshot) {
-    const [result] = await this.pool.execute(
-      "INSERT INTO service_snapshots (service_name, status, response_time_ms, checked_at) VALUES (?, ?, ?, NOW())",
-      [snapshot.service_name, snapshot.status, snapshot.response_time_ms]
-    );
-    snapshot.snapshot_id = result.insertId;
-    return snapshot;
+  constructor(pool) {
+    super();
+    this.pool = pool;
   }
 
-  async getRecentSnapshots(limit = 20) {
-    const [rows] = await this.pool.execute(
-      "SELECT * FROM service_snapshots ORDER BY checked_at DESC LIMIT ?",
-      [String(limit)]
-    );
-    return rows.map(r => new ServiceSnapshot(r));
+  async getPerformanceMetrics() {
+    return safe(async () => {
+      const [rows] = await this.pool.query(
+        `SELECT metric_month, accuracy, precision_score, recall_score, f1_score
+           FROM performance_metrics ORDER BY metric_month ASC`,
+      );
+      return rows.map((r) => ({
+        month: r.metric_month,
+        "정확도": Number(r.accuracy),
+        "정밀도": Number(r.precision_score),
+        "재현율": Number(r.recall_score),
+        "F1점수": Number(r.f1_score),
+      }));
+    }, []);
   }
 
-  async getStats(days = 7) {
-    const [rows] = await this.pool.execute(
-      "SELECT * FROM diagnosis_stats ORDER BY stat_date DESC LIMIT ?",
-      [String(days)]
-    );
-    return rows.map(r => new DiagnosisStat(r));
+  async savePerformanceMetrics(items = []) {
+    return safe(async () => {
+      for (const item of items) {
+        await this.pool.execute(
+          `INSERT INTO performance_metrics
+           (metric_month, accuracy, precision_score, recall_score, f1_score)
+           VALUES (?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             accuracy = VALUES(accuracy),
+             precision_score = VALUES(precision_score),
+             recall_score = VALUES(recall_score),
+             f1_score = VALUES(f1_score)`,
+          [item.month, item.accuracy, item.precision, item.recall, item.f1Score],
+        );
+      }
+    }, undefined);
   }
 
-  async upsertStat(stat) {
-    const [result] = await this.pool.execute(
-      `INSERT INTO diagnosis_stats (stat_date, total_diagnoses, completed, failed, avg_confidence, created_at)
-       VALUES (?, ?, ?, ?, ?, NOW())
-       ON DUPLICATE KEY UPDATE total_diagnoses = ?, completed = ?, failed = ?, avg_confidence = ?`,
-      [stat.stat_date, stat.total_diagnoses, stat.completed, stat.failed, stat.avg_confidence,
-       stat.total_diagnoses, stat.completed, stat.failed, stat.avg_confidence]
-    );
-    stat.stat_id = result.insertId;
-    return stat;
+  async getDiseaseAccuracy() {
+    return safe(async () => {
+      const [rows] = await this.pool.query(
+        `SELECT disease_name, accuracy
+           FROM disease_accuracy_metrics ORDER BY accuracy DESC`,
+      );
+      return rows.map((r) => ({ name: r.disease_name, value: Number(r.accuracy) }));
+    }, []);
+  }
+
+  async saveDiseaseAccuracy(items = []) {
+    return safe(async () => {
+      for (const item of items) {
+        await this.pool.execute(
+          `INSERT INTO disease_accuracy_metrics (disease_name, accuracy, measured_at)
+           VALUES (?, ?, NOW())
+           ON DUPLICATE KEY UPDATE accuracy = VALUES(accuracy), measured_at = NOW()`,
+          [item.name, item.value],
+        );
+      }
+    }, undefined);
+  }
+
+  async getSystemStatus() {
+    return safe(async () => {
+      const [rows] = await this.pool.query(
+        `SELECT average_response_time, daily_requests, error_rate, uptime
+           FROM system_status_metrics ORDER BY measured_at DESC LIMIT 1`,
+      );
+      if (!rows.length) return null;
+      const r = rows[0];
+      return {
+        averageResponseTime: Number(r.average_response_time),
+        dailyRequests: Number(r.daily_requests),
+        errorRate: Number(r.error_rate),
+        uptime: Number(r.uptime),
+      };
+    }, null);
+  }
+
+  async saveSystemStatus(status) {
+    return safe(async () => {
+      await this.pool.execute(
+        `INSERT INTO system_status_metrics
+         (average_response_time, daily_requests, error_rate, uptime)
+         VALUES (?, ?, ?, ?)`,
+        [
+          status.averageResponseTime,
+          status.dailyRequests,
+          status.errorRate,
+          status.uptime,
+        ],
+      );
+    }, undefined);
   }
 }
 
