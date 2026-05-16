@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Shield, User } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -16,36 +17,36 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { isAuthenticated, isInitialized, login } = useAuth()
+
+  useEffect(() => {
+    if (isInitialized && isAuthenticated) {
+      router.replace("/")
+    }
+  }, [isAuthenticated, isInitialized, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsLoading(true)
 
-    try {
-      // API 연동 전 개발용 - 무조건 로그인 성공
-      if (email && password) {
-        // Store authentication token in localStorage
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userNickname", "관리자")
-        router.push("/")
-      } else {
-        setError("이메일과 비밀번호를 입력해주세요")
-      }
-    } catch (err) {
-      // API 연동 실패 시에도 개발용으로 로그인 처리
-      if (email && password) {
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userNickname", "관리자")
-        router.push("/")
-      } else {
-        setError("이메일과 비밀번호를 입력해주세요")
-      }
-    } finally {
-      setIsLoading(false)
+    const trimmedEmail = email.trim()
+    const trimmedPassword = password.trim()
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setError("이메일과 비밀번호를 입력해주세요")
+      return
     }
+
+    setIsLoading(true)
+    const isLoginSuccessful = await login(trimmedEmail, trimmedPassword)
+    setIsLoading(false)
+
+    if (!isLoginSuccessful) {
+      setError("관리자 계정 정보가 올바르지 않습니다")
+      return
+    }
+
+    router.replace("/")
   }
 
   return (
@@ -71,7 +72,7 @@ export default function LoginPage() {
             </Alert>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                 이메일

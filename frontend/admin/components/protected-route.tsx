@@ -8,35 +8,22 @@ interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
-// Set this to true to bypass authentication during development
-const BYPASS_AUTH = true
-
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isInitialized } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    // Skip authentication check during development
-    if (BYPASS_AUTH) {
-      return
+    if (isInitialized && !isAuthenticated) {
+      router.replace("/login")
     }
-    
-    if (!isAuthenticated) {
-      router.push("/login")
-    }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isInitialized, router])
 
-  // During development, always render children without authentication check
-  if (BYPASS_AUTH) {
-    return <>{children}</>
-  }
-
-  if (!isAuthenticated) {
+  if (!isInitialized || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecting to login...</p>
+          <p className="mt-4 text-gray-600">로그인 상태를 확인하는 중...</p>
         </div>
       </div>
     )
