@@ -111,7 +111,7 @@ export const profileService = {
 
 export const noticeService = {
   getNotices(page = 1, size = 5) {
-    return apiRequest<PaginatedResponse<Notice>>(
+    return apiRequest<PaginatedResponse<Notice> & { total?: number }>(
       `/notices?page=${page}&size=${size}`,
     );
   },
@@ -173,7 +173,7 @@ export const encyclopediaService = {
   getEntries(query = "", page = 1, size = 5) {
     const encoded = encodeURIComponent(query);
 
-    return apiRequest<PaginatedResponse<EncyclopediaItem>>(
+    return apiRequest<PaginatedResponse<EncyclopediaItem> & { total?: number }>(
       `/encyclopedia?query=${encoded}&page=${page}&size=${size}`,
     );
   },

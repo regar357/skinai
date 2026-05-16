@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { ChevronDown, ChevronRight, Search } from "lucide-react"
-import { encyclopediaService } from "@/lib/api-services"
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { encyclopediaService } from "@/lib/api-services";
 
 const encyclopediaData = [
   {
@@ -53,35 +53,39 @@ const encyclopediaData = [
     content:
       "가장 위험한 피부암입니다. 멜라닌 생성 세포에서 발생하며, 색소가 있는 점이나 얼룩으로 나타납니다. 조기 발견 시 생존율이 높지만, 전이가 빠르므로 즉각적인 치료가 필요합니다.",
   },
-]
+];
 
 export function EncyclopediaPage() {
-  const [openId, setOpenId] = useState<number | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [searchTerm, setSearchTerm] = useState("")
-  const itemsPerPage = 5
-  const [entries, setEntries] = useState(encyclopediaData)
-  const [totalCount, setTotalCount] = useState(encyclopediaData.length)
+  const [openId, setOpenId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 5;
+  const [entries, setEntries] = useState(encyclopediaData);
+  const [totalCount, setTotalCount] = useState(encyclopediaData.length);
 
   const toggleItem = (id: number) => {
-    setOpenId(openId === id ? null : id)
-  }
+    setOpenId(openId === id ? null : id);
+  };
 
   useEffect(() => {
     const loadEncyclopedia = async () => {
       try {
-        const response = await encyclopediaService.getEntries(searchTerm, currentPage, itemsPerPage)
+        const response = await encyclopediaService.getEntries(
+          searchTerm,
+          currentPage,
+          itemsPerPage,
+        );
         if (response.items.length > 0) {
           const mapped = response.items.map((item) => ({
             id: item.id,
             title: item.title,
             content: item.content,
-          }))
-          setEntries(mapped)
-          setTotalCount(response.total)
+          }));
+          setEntries(mapped);
+          setTotalCount(response.pagination.totalItems);
         } else {
-          setEntries([])
-          setTotalCount(0)
+          setEntries([]);
+          setTotalCount(0);
         }
       } catch {
         // API 미연결 시 목업 데이터를 유지한다.
@@ -89,17 +93,17 @@ export function EncyclopediaPage() {
           (item) =>
             item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.content.toLowerCase().includes(searchTerm.toLowerCase()),
-        )
-        const startIndex = (currentPage - 1) * itemsPerPage
-        setEntries(filtered.slice(startIndex, startIndex + itemsPerPage))
-        setTotalCount(filtered.length)
+        );
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        setEntries(filtered.slice(startIndex, startIndex + itemsPerPage));
+        setTotalCount(filtered.length);
       }
-    }
+    };
 
-    void loadEncyclopedia()
-  }, [searchTerm, currentPage])
+    void loadEncyclopedia();
+  }, [searchTerm, currentPage]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage))
+  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
 
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-8">
@@ -110,7 +114,7 @@ export function EncyclopediaPage() {
             피부종양 기초 백과
           </h2>
         </div>
-        
+
         {/* Search bar */}
         <div className="self-end">
           <div className="relative">
@@ -120,8 +124,8 @@ export function EncyclopediaPage() {
               placeholder="검색"
               value={searchTerm}
               onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setCurrentPage(1)
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
               }}
               className="h-9 w-32 rounded-xl border border-slate-200 bg-white/80 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
             />
@@ -132,7 +136,7 @@ export function EncyclopediaPage() {
       {/* Accordion list */}
       <div className="flex flex-col gap-3">
         {entries.map((item, i) => {
-          const isOpen = openId === item.id
+          const isOpen = openId === item.id;
           return (
             <div
               key={item.id}
@@ -145,7 +149,9 @@ export function EncyclopediaPage() {
                 aria-expanded={isOpen}
               >
                 <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                  <h3 className="text-xl font-bold tracking-tight text-foreground text-left">{item.title}</h3>
+                  <h3 className="text-xl font-bold tracking-tight text-foreground text-left">
+                    {item.title}
+                  </h3>
                   <ChevronDown
                     className={`h-5 w-5 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
                       isOpen ? "rotate-180" : ""
@@ -156,12 +162,14 @@ export function EncyclopediaPage() {
               {isOpen && (
                 <div className="px-5 pb-5">
                   <div>
-                    <p className="text-base font-medium leading-relaxed text-muted-foreground">{item.content}</p>
+                    <p className="text-base font-medium leading-relaxed text-muted-foreground">
+                      {item.content}
+                    </p>
                   </div>
                 </div>
               )}
             </div>
-          )
+          );
         })}
       </div>
 
@@ -170,34 +178,38 @@ export function EncyclopediaPage() {
         <div className="flex items-center justify-center gap-2">
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
             className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-100 disabled:opacity-50"
             aria-label="이전 페이지"
           >
             <ChevronRight className="h-4 w-4 rotate-180" />
           </button>
-          
+
           <div className="flex items-center gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
-                key={pageNum}
-                type="button"
-                onClick={() => setCurrentPage(pageNum)}
-                className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
-                  currentPage === pageNum
-                    ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
-                    : 'border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm hover:bg-slate-100'
-                }`}
-              >
-                {pageNum}
-              </button>
-            ))}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+              (pageNum) => (
+                <button
+                  key={pageNum}
+                  type="button"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
+                    currentPage === pageNum
+                      ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
+                      : "border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm hover:bg-slate-100"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ),
+            )}
           </div>
-          
+
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-100 disabled:opacity-50"
             aria-label="다음 페이지"
@@ -214,5 +226,5 @@ export function EncyclopediaPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }
