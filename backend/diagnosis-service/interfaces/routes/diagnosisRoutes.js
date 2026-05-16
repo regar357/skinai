@@ -18,11 +18,16 @@
  *   GET    /api/v1/diagnoses/:id/logs     - 진단별 로그 조회
  */
 const express = require("express");
+const multer = require("multer");
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+}); // 10MB
 const router = express.Router();
 
 module.exports = (ctrl, auth, adminAuth) => {
   // 사용자 API
-  router.post("/", auth, ctrl.create); // 진단 생성
+  router.post("/", auth, upload.single("image"), ctrl.create); // 진단 생성 (파일 업로드)
   router.get("/history", auth, ctrl.getMyList); // 내 진단 이력 (구 /me)
   router.delete("/", auth, ctrl.deleteMany); // 다건 삭제
   router.get("/shared/:token", ctrl.getByShareToken); // 공유 링크 (비로그인)

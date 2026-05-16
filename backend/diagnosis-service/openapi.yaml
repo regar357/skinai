@@ -1,0 +1,315 @@
+openapi: 3.0.3
+info:
+  title: SkinAI Diagnosis Service API
+  description: |-
+    이미지 분석(진단) 마이크로서비스 API 명세서 (한국어).
+    주의: AI 서버로 전송되는 페이로드는 **이미지 파일(바이너리)** 만 전송됩니다. 메타데이터는 진단 서비스가 보관/관리합니다.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3004
+    description: Local development
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Diagnosis:
+      type: object
+      properties:
+        diagnosisId:
+          type: integer
+        userId:
+          type: integer
+        diagnosisType:
+          type: string
+          enum: [skin, face]
+        imageUrl:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/Image"
+        result:
+          type: object
+          properties:
+            suspectedDisease:
+              type: string
+            probability:
+              type: integer
+              description: 확률 (0-100)
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        result:
+          type: string
+        score:
+          type: integer
+        thumbnail:
+          type: string
+    Image:
+      type: object
+      properties:
+        image_id:
+          type: integer
+        diagnosis_id:
+          type: integer
+        original_url:
+          type: string
+        processed_url:
+          type: string
+        file_size:
+          type: integer
+        mime_type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    ShareLink:
+      type: object
+      properties:
+        share_id:
+          type: integer
+        share_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+    Log:
+      type: object
+      properties:
+        log_id:
+          type: integer
+        diagnosis_id:
+          type: integer
+        user_id:
+          type: integer
+        action:
+          type: string
+        detail:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+paths:
+  /api/v1/diagnoses:
+    post:
+      summary: 진단 요청 생성 (이미지 업로드)
+      description: |
+        클라이언트는 이미지 파일을 업로드하여 진단 요청을 생성합니다.
+        진단 서비스는 수신한 이미지 파일을 AI 서버로 전송할 때 **이미지 파일(바이너리)** 만 전송합니다.
+        메타데이터(예: user_id, diagnosis_type)는 이 서비스에서 관리됩니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: 분석할 이미지 파일
+                diagnosis_type:
+                  type: string
+                  description: 분석 유형 (skin | face)
+      responses:
+        "201":
+          description: 생성된 진단 레코드
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagnosis"
+        "400":
+          description: 잘못된 요청
+  /api/v1/diagnoses/{id}:
+    get:
+      summary: 진단 상세 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 진단 상세
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagnosis"
+  /api/v1/diagnoses/history:
+    get:
+      summary: 내 진단 이력 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: 목록 응답
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/HistoryItem"
+                  pagination:
+                    type: object
+                    properties:
+                      currentPage:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      hasNext:
+                        type: boolean
+                      hasPrev:
+                        type: boolean
+  /api/v1/diagnoses/{id}/images:
+    post:
+      summary: 진단에 이미지 메타 추가 (파일 업로드)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: 이미지 메타 저장
+  /api/v1/diagnoses/{id}/share:
+    post:
+      summary: 공유 링크 생성
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_in_hours:
+                  type: integer
+                  default: 72
+      responses:
+        "201":
+          description: 공유 링크 생성
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    $ref: "#/components/schemas/ShareLink"
+  /api/v1/diagnoses/shared/{token}:
+    get:
+      summary: 공유 토큰으로 진단 결과 조회 (비인증)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 공유 결과
+  /api/v1/diagnoses/{id}/complete:
+    put:
+      summary: AI 콜백 - 분석 완료 처리
+      description: AI 서비스가 분석을 마친 후 호출. 진단 서비스는 AI 호출 시 이미지 파일만 전송합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result_summary, ai_confidence]
+              properties:
+                result_summary: { type: string }
+                ai_confidence: { type: number }
+      responses:
+        "200":
+          description: 완료 처리
+  /api/v1/diagnoses/logs:
+    get:
+      summary: 분석 로그 조회 (관리자)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: 로그 목록
+  /api/v1/diagnoses/{id}/logs:
+    get:
+      summary: 진단별 로그 조회 (관리자)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: 로그 목록
+security:
+  - bearerAuth: []
