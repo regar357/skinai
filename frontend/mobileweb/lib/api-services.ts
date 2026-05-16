@@ -58,8 +58,6 @@ export const authService = {
 
     })
 
-    setStoredTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
-
     return data
 
   },
@@ -277,4 +275,3 @@ export const hospitalService = {
   },
 
 }
-

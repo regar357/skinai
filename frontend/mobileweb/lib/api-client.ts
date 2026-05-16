@@ -1,6 +1,11 @@
-import type { ApiErrorResponse, AuthTokens } from "@/types/api"
+import type { AuthTokens } from "@/types/api"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1"
+const DEVELOPMENT_API_BASE_URL = "http://localhost:3001/api/v1"
+const PRODUCTION_API_BASE_URL = "/api/v1"
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "development" ? DEVELOPMENT_API_BASE_URL : PRODUCTION_API_BASE_URL)
 const ACCESS_TOKEN_KEY = "skinai_access_token"
 const REFRESH_TOKEN_KEY = "skinai_refresh_token"
 
@@ -39,19 +44,16 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   })
 
   if (!response.ok) {
-    let error: ApiErrorResponse = {
-      code: `HTTP_${response.status}`,
-      message: "요청 처리 중 오류가 발생했습니다.",
-    }
+    let errorMessage = "요청 처리 중 오류가 발생했습니다."
 
     try {
-      const parsed = (await response.json()) as ApiErrorResponse
-      if (parsed?.message) error = parsed
+      const parsed = (await response.json()) as { message?: string; error?: { message?: string } }
+      errorMessage = parsed.message || parsed.error?.message || errorMessage
     } catch {
       // Keep default error shape when server doesn't return JSON.
     }
 
-    throw new Error(error.message)
+    throw new Error(errorMessage)
   }
 
   if (response.status === 204) {

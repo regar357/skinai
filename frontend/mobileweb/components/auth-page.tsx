@@ -14,36 +14,78 @@ export function AuthPage({ onLogin }: AuthPageProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [form, setForm] = useState({ name: "", email: "", password: "" })
   const [errorMessage, setErrorMessage] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
+
+  const validateForm = () => {
+    const email = form.email.trim()
+    const password = form.password.trim()
+    const name = form.name.trim()
+
+    if (mode === "signup" && !name) {
+      return "이름을 입력해주세요."
+    }
+
+    if (!email) {
+      return "이메일을 입력해주세요."
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return "올바른 이메일 형식으로 입력해주세요."
+    }
+
+    if (!password) {
+      return "비밀번호를 입력해주세요."
+    }
+
+    if (mode === "signup" && password.length < 8) {
+      return "비밀번호는 최소 8자 이상이어야 합니다."
+    }
+
+    return ""
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage("")
+    setSuccessMessage("")
+
+    const validationMessage = validateForm()
+    if (validationMessage) {
+      setErrorMessage(validationMessage)
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      const data =
-        mode === "login"
-          ? await authService.login({
-              email: form.email,
-              password: form.password,
-            })
-          : await authService.signup({
-              name: form.name,
-              email: form.email,
-              password: form.password,
-            })
+      const email = form.email.trim()
+      const password = form.password.trim()
+      const name = form.name.trim()
+
+      if (mode === "signup") {
+        await authService.signup({
+          name,
+          email,
+          password,
+        })
+
+        setMode("login")
+        setForm({ name: "", email, password: "" })
+        setSuccessMessage("회원가입이 완료되었습니다. 로그인해주세요.")
+        return
+      }
+
+      const data = await authService.login({
+        email,
+        password,
+      })
 
       onLogin({
-        name: data.user.name || form.name || "사용자",
-        email: data.user.email || form.email || "user@skinai.com",
+        name: data.user.name || name,
+        email: data.user.email || email,
       })
-    } catch {
-      // 백엔드 미연결 상태에서도 기존 목업 UX를 유지한다.
-      onLogin({
-        name: form.name || "사용자",
-        email: form.email || "user@skinai.com",
-      })
-      setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.")
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "로그인 처리 중 오류가 발생했습니다.")
     } finally {
       setIsLoading(false)
     }
@@ -80,7 +122,7 @@ export function AuthPage({ onLogin }: AuthPageProps) {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             {mode === "signup" && (
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -90,7 +132,12 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                   type="text"
                   placeholder="이름"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) => {
+                    setErrorMessage("")
+                    setSuccessMessage("")
+                    setForm({ ...form, name: e.target.value })
+                  }}
+                  required
                   className="w-full rounded-2xl border border-slate-200 bg-white/80 py-4 pl-12 pr-4 text-base font-medium text-foreground placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                 />
               </div>
@@ -104,7 +151,12 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                 type="email"
                 placeholder="이메일"
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(e) => {
+                  setErrorMessage("")
+                  setSuccessMessage("")
+                  setForm({ ...form, email: e.target.value })
+                }}
+                required
                 className="w-full rounded-2xl border border-slate-200 bg-white/80 py-4 pl-12 pr-4 text-lg font-medium text-foreground placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
               />
             </div>
@@ -117,7 +169,12 @@ export function AuthPage({ onLogin }: AuthPageProps) {
                 type={showPassword ? "text" : "password"}
                 placeholder="비밀번호"
                 value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                onChange={(e) => {
+                  setErrorMessage("")
+                  setSuccessMessage("")
+                  setForm({ ...form, password: e.target.value })
+                }}
+                required
                 className="w-full rounded-2xl border border-slate-200 bg-white/80 py-4 pl-12 pr-12 text-lg font-medium text-foreground placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
               />
               <button
@@ -146,6 +203,7 @@ export function AuthPage({ onLogin }: AuthPageProps) {
               )}
             </button>
           </form>
+          {successMessage && <p className="mt-3 text-center text-sm text-blue-600">{successMessage}</p>}
           {errorMessage && <p className="mt-3 text-center text-sm text-amber-600">{errorMessage}</p>}
 
           {/* Toggle mode */}
@@ -153,7 +211,11 @@ export function AuthPage({ onLogin }: AuthPageProps) {
             {mode === "login" ? "계정이 없으신가요?" : "이미 계정이 있으신가요?"}{" "}
             <button
               type="button"
-              onClick={() => setMode(mode === "login" ? "signup" : "login")}
+              onClick={() => {
+                setErrorMessage("")
+                setSuccessMessage("")
+                setMode(mode === "login" ? "signup" : "login")
+              }}
               className="font-bold text-blue-500 hover:underline"
             >
               {mode === "login" ? "회원가입" : "로그인"}
