@@ -1,31 +1,31 @@
--- ═══════════════════════════════════════════════
--- SkinAI Monitoring Service - DB 스키마
--- Database: skinai_monitoring
--- 역할: AI 진단 모니터링 + 대시보드
--- ═══════════════════════════════════════════════
-
 CREATE DATABASE IF NOT EXISTS skinai_monitoring DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE skinai_monitoring;
 
--- 서비스 상태 스냅샷 테이블 (대시보드용)
-CREATE TABLE IF NOT EXISTS service_snapshots (
-  snapshot_id   INT AUTO_INCREMENT PRIMARY KEY,
-  service_name  VARCHAR(100) NOT NULL,
-  status        ENUM('UP', 'DOWN', 'DEGRADED') DEFAULT 'UP',
-  response_time_ms INT DEFAULT NULL,
-  checked_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_snapshot_service (service_name),
-  INDEX idx_snapshot_time (checked_at)
+CREATE TABLE IF NOT EXISTS performance_metrics (
+  metric_id INT AUTO_INCREMENT PRIMARY KEY,
+  metric_month CHAR(7) NOT NULL,
+  accuracy DECIMAL(5,2) NOT NULL DEFAULT 0,
+  precision_score DECIMAL(5,2) NOT NULL DEFAULT 0,
+  recall_score DECIMAL(5,2) NOT NULL DEFAULT 0,
+  f1_score DECIMAL(5,2) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_metric_month (metric_month)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 진단 통계 캐시 테이블 (대시보드용)
-CREATE TABLE IF NOT EXISTS diagnosis_stats (
-  stat_id       INT AUTO_INCREMENT PRIMARY KEY,
-  stat_date     DATE NOT NULL,
-  total_diagnoses INT DEFAULT 0,
-  completed     INT DEFAULT 0,
-  failed        INT DEFAULT 0,
-  avg_confidence DECIMAL(5,2) DEFAULT NULL,
-  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_stat_date (stat_date)
+CREATE TABLE IF NOT EXISTS disease_accuracy_metrics (
+  metric_id INT AUTO_INCREMENT PRIMARY KEY,
+  disease_name VARCHAR(100) NOT NULL,
+  accuracy DECIMAL(5,2) NOT NULL DEFAULT 0,
+  measured_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_disease_name (disease_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS system_status_metrics (
+  status_id INT AUTO_INCREMENT PRIMARY KEY,
+  average_response_time INT NOT NULL DEFAULT 0,
+  daily_requests INT NOT NULL DEFAULT 0,
+  error_rate DECIMAL(5,2) NOT NULL DEFAULT 0,
+  uptime DECIMAL(5,2) NOT NULL DEFAULT 0,
+  measured_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_system_status_measured_at (measured_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
