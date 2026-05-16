@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════
  * User Service - 진입점 (Composition Root)
  * ═══════════════════════════════════════════════
- * 
+ *
  * 포트: 3003
  * 기능: 회원 탈퇴
  */
@@ -27,16 +27,27 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({ status: "UP", service: "user-service", timestamp: new Date().toISOString() });
+  res.json({
+    status: "UP",
+    service: "user-service",
+    timestamp: new Date().toISOString(),
+  });
 });
 app.use("/api/v1/users", createUserRoutes(userController, authenticate));
 
 app.use((err, req, res, next) => {
   console.error(`[user-service] ${req.method} ${req.originalUrl}`, err.message);
   const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({ success: false, message: err.statusCode ? err.message : "서버 내부 오류" });
+  res
+    .status(statusCode)
+    .json({
+      success: false,
+      message: err.statusCode ? err.message : "서버 내부 오류",
+    });
 });
-app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
+app.use((req, res) =>
+  res.status(404).json({ success: false, message: "Not Found" }),
+);
 
 app.listen(port, () => console.log(`[user-service] running on port ${port}`));
 module.exports = app;
