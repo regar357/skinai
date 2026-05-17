@@ -16,6 +16,11 @@ const { ShareLink } = require("../domain/entities/ShareLink");
 const { DiagnosisLog } = require("../domain/entities/DiagnosisLog");
 const { v4: uuidv4 } = require("uuid");
 const aiClient = require("../infrastructure/ai/aiClient");
+const fs = require("fs");
+const path = require("path");
+
+const UPLOAD_DIR = path.join(__dirname, "../uploads");
+const SERVICE_URL = process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
 
 class DiagnosisService {
   constructor(diagnosisRepository) {
@@ -39,17 +44,23 @@ class DiagnosisService {
     let confidenceFraction = null;
     let finalStatus = saved.status;
 
-    // 이미지 메타데이터 저장 (파일 업로드인 경우 placeholder URL 사용)
     if (file) {
-      const placeholderUrl = `upload://${uuidv4()}`;
+      // 로컬 파일 저장 (개발 환경 S3 대체)
+      if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+      const ext = path.extname(file.originalname || "image.jpg") || ".jpg";
+      const filename = `${uuidv4()}${ext}`;
+      fs.writeFileSync(path.join(UPLOAD_DIR, filename), file.buffer);
+      const localUrl = `${SERVICE_URL}/uploads/${filename}`;
+
       const image = new Image({
         user_id,
         diagnosis_id: saved.diagnosis_id,
-        original_url: placeholderUrl,
+        original_url: localUrl,
         file_size: file.size,
         mime_type: file.mimetype,
       });
       await this.diagnosisRepository.saveImage(image);
+      await this.diagnosisRepository.updateDiagnosis(saved.diagnosis_id, { image_url: localUrl });
 
       try {
         const aiResponse = await aiClient.sendImage(
