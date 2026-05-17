@@ -276,32 +276,25 @@ export function AIMonitoringPage() {
               질환별 탐지 정확도
             </h3>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart 
-                data={[
-                  { disease: "기저세포암", 정확도: 96.5 },
-                  { disease: "편평세포암", 정확도: 94.2 },
-                  { disease: "흑색종", 정확도: 91.8 },
-                  { disease: "양성 종양", 정확도: 88.2 },
-                  { disease: "광선 각화증", 정확도: 89.7 },
-                  { disease: "지루성 각화증", 정확도: 85.9 }
-                ]}
+              <BarChart
+                data={diseaseAccuracyData}
                 layout="vertical"
                 margin={{ top: 20, right: 30, bottom: 20, left: 40 }}
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis type="number" domain={[0, 100]} hide />
-                <YAxis 
-                  dataKey="disease" 
-                  type="category" 
+                <YAxis
+                  dataKey="name"
+                  type="category"
                   width={100}
                   tick={{ fontSize: 12 }}
                 />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => [`${value}%`, '정확도']}
                   cursor={{ fill: 'transparent' }}
                 />
-                <Bar 
-                  dataKey="정확도" 
+                <Bar
+                  dataKey="value"
                   fill="#3b82f6"
                   radius={[0, 4, 4, 0]}
                   barSize={20}

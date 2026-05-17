@@ -13,7 +13,7 @@ class InternalMonitoringService {
               COUNT(*) AS total,
               SUM(status='completed') AS completed,
               SUM(status='failed') AS failed,
-              AVG(CASE WHEN ai_confidence IS NULL THEN 0 ELSE ai_confidence END) AS accuracy
+              AVG(CASE WHEN status='completed' THEN ai_confidence END) AS avg_confidence
          FROM diagnoses
         WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
         GROUP BY month
@@ -24,13 +24,16 @@ class InternalMonitoringService {
       const total = Number(r.total) || 1;
       const completed = Number(r.completed) || 0;
       const failed = Number(r.failed) || 0;
-      const precision = (completed / total) * 100;
-      const recall = completed + failed ? (completed / (completed + failed)) * 100 : 0;
-      const f1Score = precision + recall ? (2 * precision * recall) / (precision + recall) : 0;
+      // 정밀도: 결론이 난 진단 중 성공 비율 (completed / (completed + failed))
+      const precision = (completed + failed) > 0 ? (completed / (completed + failed)) * 100 : 0;
+      // 재현율: 전체 접수 대비 완료 비율 (completed / total)
+      const recall = (completed / total) * 100;
+      const f1Score = (precision + recall) > 0 ? (2 * precision * recall) / (precision + recall) : 0;
 
       return {
         month: r.month,
-        accuracy: this.pct(r.accuracy),
+        // 정확도: 완료된 진단의 평균 AI 신뢰도 (0~1 → 0~100%)
+        accuracy: this.pct(Number(r.avg_confidence || 0) * 100),
         precision: this.pct(precision),
         recall: this.pct(recall),
         f1Score: this.pct(f1Score),
@@ -47,7 +50,7 @@ class InternalMonitoringService {
         GROUP BY name
         ORDER BY value DESC`,
     );
-    return rows.map((r) => ({ name: r.name, value: this.pct(r.value) }));
+    return rows.map((r) => ({ name: r.name, value: this.pct(Number(r.value) * 100) }));
   }
 
   async getDailySummary() {
