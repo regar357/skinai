@@ -12,42 +12,9 @@
  *   - 대시보드/AI 모니터링 통계 집계
  */
 class AdminService {
-  constructor({ serviceClient, adminRepository, jwt }) {
+  constructor({ serviceClient, adminRepository }) {
     this.serviceClient = serviceClient;
     this.adminRepository = adminRepository;
-    this.jwt = jwt; // jsonwebtoken
-  }
-
-  // ─────────────────────────────────────────────
-  // 관리자 로그인
-  // - 인증은 auth-service 에 위임하되, 결과 user.role 이
-  //   admin 인 경우에만 통과시킨다.
-  // ─────────────────────────────────────────────
-  async login({ email, password }) {
-    if (!email || !password) {
-      const err = new Error("이메일과 비밀번호를 입력해주세요.");
-      err.statusCode = 400;
-      throw err;
-    }
-    const result = await this.serviceClient.login({ email, password });
-
-    // 토큰을 디코딩해서 role 검증 (SECRET이 같다면 verify 가능)
-    let role = "user";
-    try {
-      const secret = process.env.JWT_SECRET || "1234";
-      const decoded = this.jwt.verify(result.accessToken, secret);
-      role = decoded.role;
-    } catch {
-      // verify 실패 시에는 email 기반 휴리스틱으로 폴백
-      role = email.startsWith("admin") ? "admin" : "user";
-    }
-
-    if (role !== "admin") {
-      const err = new Error("관리자 권한이 없습니다.");
-      err.statusCode = 403;
-      throw err;
-    }
-    return result;
   }
 
   // ─────────────────────────────────────────────
@@ -158,41 +125,43 @@ class AdminService {
   }
 
   // ─────────────────────────────────────────────
-  // 대시보드 통계
+  // 대시보드 통계 — monitoring-service 위임
   // ─────────────────────────────────────────────
-  async getDashboardStats(token) {
-    return await this.adminRepository.getDashboardStats();
+  async getDashboardStats() {
+    return (await this.serviceClient.getMonitoringDashboardStats()) ||
+      { totalUsers: 0, activeUsers: 0, totalAnalyses: 0, todayAnalyses: 0 };
   }
 
-  async getDiagnosisTrend(token) {
-    return await this.adminRepository.getDiagnosisTrend();
+  async getDiagnosisTrend() {
+    return (await this.serviceClient.getMonitoringDiagnosisTrend()) || [];
   }
 
-  async getDiseaseDistribution(token) {
-    return await this.adminRepository.getDiseaseDistribution();
+  async getDiseaseDistribution() {
+    return (await this.serviceClient.getMonitoringDiseaseDistribution()) || [];
   }
 
-  async getUserTrend(token) {
-    return await this.adminRepository.getUserTrend();
+  async getUserTrend() {
+    return (await this.serviceClient.getMonitoringUserTrend()) || [];
   }
 
   // ─────────────────────────────────────────────
-  // AI 모니터링
+  // AI 모니터링 — monitoring-service 위임
   // ─────────────────────────────────────────────
-  async getPerformanceMetrics(token) {
-    return await this.adminRepository.getPerformanceMetrics();
+  async getPerformanceMetrics() {
+    return (await this.serviceClient.getMonitoringPerformance()) || [];
   }
 
-  async getDiseaseAccuracy(token) {
-    return await this.adminRepository.getDiseaseAccuracy();
+  async getDiseaseAccuracy() {
+    return (await this.serviceClient.getMonitoringDiseaseAccuracy()) || [];
   }
 
-  async getSystemStatus(token) {
-    return await this.adminRepository.getSystemStatus();
+  async getSystemStatus() {
+    return (await this.serviceClient.getMonitoringSystemStatus()) ||
+      { averageResponseTime: 0, dailyRequests: 0, errorRate: 0, uptime: 0 };
   }
 
-  async getModelInfo(token) {
-    return await this.adminRepository.getModelInfo();
+  async getModelInfo() {
+    return (await this.serviceClient.getMonitoringModelInfo()) || {};
   }
 }
 

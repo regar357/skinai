@@ -117,10 +117,10 @@ export function DashboardContent() {
           dashboardApi.getUserTrend()
         ]);
         
-        setStats(statsRes.data);
-        setDiagnosisTrend(diagnosisRes.data);
-        setDiseaseDistribution(diseaseRes.data);
-        setUserTrend(userRes.data);
+        setStats(statsRes.data ?? mockStats);
+        setDiagnosisTrend(diagnosisRes.data ?? mockDiagnosisTrend);
+        setDiseaseDistribution(diseaseRes.data ?? mockDiseaseDistribution);
+        setUserTrend(userRes.data ?? mockUserTrend);
       } catch (error) {
         console.log("API 연동 실패 - 프론트 테스트 모드로 동작");
         // 이미 mock 데이터로 설정되어 있으므로 그대로 사용

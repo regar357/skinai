@@ -137,10 +137,10 @@ export function AIMonitoringPage() {
           monitoringApi.getModelInfo()
         ]);
         
-        setPerformanceData(performanceRes.data);
-        setDiseaseAccuracyData(diseaseRes.data);
-        setSystemStatus(systemRes.data);
-        setModelInfo(modelRes.data);
+        setPerformanceData(performanceRes.data ?? mockPerformanceData);
+        setDiseaseAccuracyData(diseaseRes.data ?? mockDiseaseAccuracyData);
+        setSystemStatus(systemRes.data ?? mockSystemStatus);
+        setModelInfo(modelRes.data ?? null);
       } catch (error) {
         // API 연동 실패 시 - 프론트 테스트 모드로 동작
         console.log("API 연동 실패 - 프론트 테스트 모드로 동작");

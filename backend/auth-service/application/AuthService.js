@@ -78,8 +78,7 @@ class AuthService {
     const userInfo = await this._createUserInUserService({ email, name });
     const userId = userInfo.id;
 
-    // 이메일이 admin으로 시작하면 관리자
-    const role = email.startsWith("admin") ? "admin" : "user";
+    const role = "user";
 
     // 인증 정보 저장 (name도 캐시)
     const auth = new Auth({
@@ -132,7 +131,7 @@ class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: { id: auth.user_id, name: auth.name || "", email: auth.email },
+      user: { id: auth.user_id, name: auth.name || "", email: auth.email, role: auth.role },
     };
   }
 

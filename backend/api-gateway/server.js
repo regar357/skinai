@@ -147,16 +147,8 @@ app.use(
   buildProxy(TARGETS.feedback, "feedback"),
 );
 
-// admin: login 공개, 그 외 관리자
-const adminProxy = buildProxy(TARGETS.admin, "admin");
-app.use("/api/v1/admin", (req, res, next) => {
-  if (req.path === "/login") {
-    return adminProxy(req, res, next);
-  }
-  return authenticate(req, res, () =>
-    requireAdmin(req, res, () => adminProxy(req, res, next)),
-  );
-});
+// admin: 전체 관리자 전용
+app.use("/api/v1/admin", authenticate, requireAdmin, buildProxy(TARGETS.admin, "admin"));
 
 // monitoring: 관리자
 app.use(

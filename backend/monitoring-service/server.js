@@ -1,17 +1,15 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const pool = require("./infrastructure/db/pool");
 const { authenticate, requireAdmin } = require("./infrastructure/middleware/auth");
 const MonitoringClient = require("./infrastructure/clients/MonitoringClient");
-const MonitoringRepositoryImpl = require("./infrastructure/db/MonitoringRepositoryImpl");
 const MonitoringService = require("./application/MonitoringService");
 const MonitoringController = require("./interfaces/MonitoringController");
 const createMonitoringRoutes = require("./interfaces/routes/monitoringRoutes");
+const createInternalAdminRoutes = require("./interfaces/routes/internalAdminRoutes");
 
-const repository = new MonitoringRepositoryImpl(pool);
 const client = new MonitoringClient();
-const service = new MonitoringService({ client, repository });
+const service = new MonitoringService({ client });
 const controller = new MonitoringController(service);
 
 const app = express();
@@ -20,17 +18,11 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({
-    status: "UP",
-    service: "monitoring-service",
-    timestamp: new Date().toISOString(),
-  });
+  res.json({ status: "UP", service: "monitoring-service", timestamp: new Date().toISOString() });
 });
 
-app.use(
-  "/api/v1/monitoring",
-  createMonitoringRoutes(controller, authenticate, requireAdmin),
-);
+app.use("/api/v1/monitoring", createMonitoringRoutes(controller, authenticate, requireAdmin));
+app.use("/internal/admin", createInternalAdminRoutes(controller));
 
 app.use((err, req, res, next) => {
   console.error(`[monitoring-service] ${req.method} ${req.originalUrl}`, err.message);

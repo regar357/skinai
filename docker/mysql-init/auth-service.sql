@@ -17,3 +17,8 @@ CREATE TABLE IF NOT EXISTS auth (
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_auth_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 초기 관리자 계정 seed (비밀번호: Admin1234!)
+-- bcrypt hash of 'Admin1234!' with 10 rounds
+INSERT IGNORE INTO auth (user_id, email, password, name, role)
+VALUES (0, 'admin@skinai.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '관리자', 'admin');

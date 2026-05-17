@@ -26,6 +26,14 @@ class InternalMonitoringController {
       next(e);
     }
   };
+
+  getDashboardStats = async (req, res, next) => {
+    try {
+      res.json({ success: true, data: await this.service.getDashboardStats() });
+    } catch (e) {
+      next(e);
+    }
+  };
 }
 
 module.exports = InternalMonitoringController;

@@ -64,6 +64,40 @@ class InternalMonitoringService {
       errorRate: total ? this.pct((failed / total) * 100) : 0,
     };
   }
+
+  async getDashboardStats() {
+    const [[totals]] = await this.pool.query(
+      `SELECT COUNT(*) AS totalAnalyses,
+              SUM(DATE(created_at)=CURDATE()) AS todayAnalyses
+         FROM diagnoses`,
+    );
+
+    const [trendRows] = await this.pool.query(
+      `SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS value
+         FROM diagnoses
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY month ORDER BY month`,
+    );
+
+    const [distRows] = await this.pool.query(
+      `SELECT COALESCE(NULLIF(result_summary, ''), 'unknown') AS name,
+              COUNT(*) AS value
+         FROM diagnoses WHERE status='completed'
+        GROUP BY name ORDER BY value DESC`,
+    );
+    const total = distRows.reduce((s, r) => s + Number(r.value), 0) || 1;
+
+    return {
+      totalAnalyses: Number(totals.totalAnalyses) || 0,
+      todayAnalyses: Number(totals.todayAnalyses) || 0,
+      diagnosisTrend: trendRows.map((r) => ({ month: r.month, value: Number(r.value) })),
+      diseaseDistribution: distRows.map((r) => ({
+        name: r.name,
+        value: Number(r.value),
+        percentage: Math.round((Number(r.value) / total) * 100),
+      })),
+    };
+  }
 }
 
 module.exports = InternalMonitoringService;

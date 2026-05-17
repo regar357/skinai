@@ -19,6 +19,8 @@ class ServiceClient {
       process.env.FEEDBACK_SERVICE_URL || "http://localhost:3007";
     this.monitoringServiceUrl =
       process.env.MONITORING_SERVICE_URL || "http://localhost:3009";
+    this.internalToken =
+      process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
   }
 
   async _request(url, options = {}) {
@@ -50,12 +52,53 @@ class ServiceClient {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  // ── 인증 서비스 ──────────────────────────
-  async login(payload) {
-    return this._request(`${this.authServiceUrl}/api/v1/auth/login`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+  _internalHeader() {
+    return { "x-internal-token": this.internalToken };
+  }
+
+  async _internalGet(url) {
+    try {
+      const res = await fetch(url, { headers: this._internalHeader() });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json.data ?? json;
+    } catch (e) {
+      console.warn("[admin-service] internal call failed:", url, e.message);
+      return null;
+    }
+  }
+
+  // ── 모니터링 서비스 내부 API ─────────────
+  getMonitoringDashboardStats() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/dashboard/stats`);
+  }
+
+  getMonitoringDiagnosisTrend() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/dashboard/diagnosis-trend`);
+  }
+
+  getMonitoringDiseaseDistribution() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/dashboard/disease-distribution`);
+  }
+
+  getMonitoringUserTrend() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/dashboard/user-trend`);
+  }
+
+  getMonitoringPerformance() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/monitoring/performance`);
+  }
+
+  getMonitoringDiseaseAccuracy() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/monitoring/disease-accuracy`);
+  }
+
+  getMonitoringSystemStatus() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/monitoring/system-status`);
+  }
+
+  getMonitoringModelInfo() {
+    return this._internalGet(`${this.monitoringServiceUrl}/internal/admin/monitoring/model-info`);
   }
 
   // ── 분석(진단) 서비스 ────────────────────

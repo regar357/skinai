@@ -13,13 +13,18 @@ const pool = require("./infrastructure/db/pool");
 const UserRepositoryImpl = require("./infrastructure/db/UserRepositoryImpl");
 const { authenticate } = require("./infrastructure/middleware/auth");
 const UserService = require("./application/UserService");
+const InternalMonitoringService = require("./application/InternalMonitoringService");
 const UserController = require("./interfaces/UserController");
+const InternalMonitoringController = require("./interfaces/InternalMonitoringController");
 const createUserRoutes = require("./interfaces/routes/userRoutes");
+const createInternalMonitoringRoutes = require("./interfaces/routes/internalMonitoringRoutes");
 
 // 의존성 조립
 const userRepository = new UserRepositoryImpl(pool);
 const userService = new UserService(userRepository);
 const userController = new UserController(userService);
+const internalMonitoringService = new InternalMonitoringService(pool);
+const internalMonitoringController = new InternalMonitoringController(internalMonitoringService);
 
 const app = express();
 const port = process.env.PORT || 3003;
@@ -34,6 +39,7 @@ app.get("/health", (req, res) => {
   });
 });
 app.use("/api/v1/users", createUserRoutes(userController, authenticate));
+app.use("/internal/monitoring", createInternalMonitoringRoutes(internalMonitoringController));
 
 app.use((err, req, res, next) => {
   console.error(`[user-service] ${req.method} ${req.originalUrl}`, err.message);

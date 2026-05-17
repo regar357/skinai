@@ -11,22 +11,6 @@ class AdminController {
     this.adminService = adminService;
   }
 
-  // ── 관리자 로그인 ──────────────────────────
-  login = async (req, res, next) => {
-    try {
-      const result = await this.adminService.login(req.body);
-      res.status(200).json({
-        success: true,
-        message: "관리자 로그인 성공",
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        user: result.user,
-      });
-    } catch (e) {
-      next(e);
-    }
-  };
-
   // ── 사용자 관리 ────────────────────────────
   getUsers = async (req, res, next) => {
     try {
