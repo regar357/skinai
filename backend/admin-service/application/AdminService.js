@@ -20,47 +20,50 @@ class AdminService {
   // ─────────────────────────────────────────────
   // 사용자 관리
   // ─────────────────────────────────────────────
-  async getUsers({ page, limit, status, token }) {
-    return await this.adminRepository.findUsers({ page, limit, status });
+  async getUsers({ page, limit, status }) {
+    return (await this.serviceClient.getAdminUsers(page, limit, status)) ||
+      { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
   }
 
-  async suspendUser(userId, token) {
-    return await this.adminRepository.updateUserStatus(userId, "suspended");
+  async suspendUser(userId) {
+    return await this.serviceClient.suspendAdminUser(userId);
   }
 
-  async unsuspendUser(userId, token) {
-    return await this.adminRepository.updateUserStatus(userId, "active");
+  async unsuspendUser(userId) {
+    return await this.serviceClient.unsuspendAdminUser(userId);
   }
 
-  async deleteUser(userId, token) {
-    return await this.adminRepository.updateUserStatus(userId, "deleted");
+  async deleteUser(userId) {
+    return await this.serviceClient.deleteAdminUser(userId);
   }
 
   // ─────────────────────────────────────────────
   // 피드백 관리
   // ─────────────────────────────────────────────
-  async getFeedbacks({ page, limit, token }) {
-    return await this.adminRepository.findFeedbacks({ page, limit });
+  async getFeedbacks({ page, limit }) {
+    return (await this.serviceClient.getAdminFeedbacks(page, limit)) ||
+      { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
   }
 
-  async replyFeedback(feedbackId, replyText, token) {
+  async replyFeedback(feedbackId, replyText) {
     if (!replyText) {
       const err = new Error("답변 내용이 필요합니다.");
       err.statusCode = 400;
       throw err;
     }
-    return await this.adminRepository.saveFeedbackReply(feedbackId, replyText);
+    return await this.serviceClient.replyAdminFeedback(feedbackId, replyText);
   }
 
   // ─────────────────────────────────────────────
   // 분석/이미지 관리
   // ─────────────────────────────────────────────
-  async getExamRecords({ page, limit, search, token }) {
-    return await this.adminRepository.findExamRecords({ page, limit, search });
+  async getExamRecords({ page, limit, search }) {
+    return (await this.serviceClient.getAdminExamRecords(page, limit, search)) ||
+      { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
   }
 
-  async getImageInfo(imageId, token) {
-    const image = await this.adminRepository.findImageById(imageId);
+  async getImageInfo(imageId) {
+    const image = await this.serviceClient.getAdminImageInfo(imageId);
     if (!image) {
       const err = new Error("이미지를 찾을 수 없습니다.");
       err.statusCode = 404;

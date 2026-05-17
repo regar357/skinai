@@ -75,18 +75,15 @@ export function EncyclopediaPage() {
   const handleEditSubmit = async () => {
     if (editingEntry && editingEntry.title.trim() && editingEntry.description.trim()) {
       try {
-        // API 연동 시도
         await contentApi.diseases.update(editingEntry.id, {
           title: editingEntry.title,
           description: editingEntry.description
         })
-        alert(`백과사전 항목 "${editingEntry.title}"이 수정되었습니다.`)
         setShowEditModal(false)
         setEditingEntry(null)
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(currentPage)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`백과사전 항목 "${editingEntry.title}"이 수정되었습니다. (테스트 모드)`)
         setShowEditModal(false)
         setEditingEntry(null)
@@ -106,14 +103,11 @@ export function EncyclopediaPage() {
   const handleDeleteConfirm = async () => {
     if (deleteConfirmId) {
       try {
-        // API 연동 시도
         await contentApi.diseases.delete(deleteConfirmId)
-        alert(`백과사전 항목 ID ${deleteConfirmId}가 삭제되었습니다.`)
         setDeleteConfirmId(null)
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(1)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`백과사전 항목 ID ${deleteConfirmId}가 삭제되었습니다. (테스트 모드)`)
         setDeleteConfirmId(null)
       }
@@ -132,18 +126,15 @@ export function EncyclopediaPage() {
   const handleAddSubmit = async () => {
     if (newEntry.title.trim() && newEntry.description.trim()) {
       try {
-        // API 연동 시도
         await contentApi.diseases.create({
           title: newEntry.title,
           description: newEntry.description
         })
-        alert(`백과사전 항목 "${newEntry.title}"이 추가되었습니다.`)
         setShowAddModal(false)
         setNewEntry({ title: "", description: "" })
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(1)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`백과사전 항목 "${newEntry.title}"이 추가되었습니다. (테스트 모드)`)
         setShowAddModal(false)
         setNewEntry({ title: "", description: "" })

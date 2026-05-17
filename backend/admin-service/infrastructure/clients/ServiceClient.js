@@ -24,10 +24,11 @@ class ServiceClient {
   }
 
   async _request(url, options = {}) {
+    const { headers: optHeaders = {}, ...restOptions } = options;
     try {
       const response = await fetch(url, {
-        headers: { "Content-Type": "application/json", ...options.headers },
-        ...options,
+        headers: { "Content-Type": "application/json", ...optHeaders },
+        ...restOptions,
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -66,6 +67,90 @@ class ServiceClient {
       console.warn("[admin-service] internal call failed:", url, e.message);
       return null;
     }
+  }
+
+  async _internalPost(url, body) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { ...this._internalHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json.data ?? json;
+    } catch (e) {
+      console.warn("[admin-service] internal call failed:", url, e.message);
+      return null;
+    }
+  }
+
+  async _internalPatch(url, body = {}) {
+    try {
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { ...this._internalHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json.data ?? json;
+    } catch (e) {
+      console.warn("[admin-service] internal call failed:", url, e.message);
+      return null;
+    }
+  }
+
+  async _internalDelete(url) {
+    try {
+      const res = await fetch(url, {
+        method: "DELETE",
+        headers: this._internalHeader(),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json;
+    } catch (e) {
+      console.warn("[admin-service] internal call failed:", url, e.message);
+      return null;
+    }
+  }
+
+  // ── 사용자 서비스 내부 관리 API ──────────
+  getAdminUsers(page, limit, status) {
+    const qs = `page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`;
+    return this._internalGet(`${this.userServiceUrl}/internal/admin/users?${qs}`);
+  }
+
+  suspendAdminUser(userId) {
+    return this._internalPatch(`${this.userServiceUrl}/internal/admin/users/${userId}/suspend`);
+  }
+
+  unsuspendAdminUser(userId) {
+    return this._internalPatch(`${this.userServiceUrl}/internal/admin/users/${userId}/unsuspend`);
+  }
+
+  deleteAdminUser(userId) {
+    return this._internalDelete(`${this.userServiceUrl}/internal/admin/users/${userId}`);
+  }
+
+  // ── 피드백 서비스 내부 관리 API ──────────
+  getAdminFeedbacks(page, limit) {
+    return this._internalGet(`${this.feedbackServiceUrl}/internal/admin/feedbacks?page=${page}&limit=${limit}`);
+  }
+
+  replyAdminFeedback(feedbackId, replyText) {
+    return this._internalPost(`${this.feedbackServiceUrl}/internal/admin/feedbacks/${feedbackId}/reply`, { reply_text: replyText });
+  }
+
+  // ── 진단 서비스 내부 관리 API ────────────
+  getAdminExamRecords(page, limit, search) {
+    const qs = `page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`;
+    return this._internalGet(`${this.diagnosisServiceUrl}/internal/admin/analyses/records?${qs}`);
+  }
+
+  getAdminImageInfo(imageId) {
+    return this._internalGet(`${this.diagnosisServiceUrl}/internal/admin/analyses/images/${imageId}`);
   }
 
   // ── 모니터링 서비스 내부 API ─────────────
@@ -121,20 +206,24 @@ class ServiceClient {
   }
 
   async createEncyclopediaArticle(payload, token) {
+    const { description, ...rest } = payload;
+    const body = { ...rest, content: rest.content || description };
     return this._request(`${this.contentServiceUrl}/api/v1/encyclopedia`, {
       method: "POST",
       headers: this._authHeader(token),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   }
 
   async updateEncyclopediaArticle(id, payload, token) {
+    const { description, ...rest } = payload;
+    const body = { ...rest, content: rest.content || description };
     return this._request(
       `${this.contentServiceUrl}/api/v1/encyclopedia/${id}`,
       {
         method: "PUT",
         headers: this._authHeader(token),
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       },
     );
   }

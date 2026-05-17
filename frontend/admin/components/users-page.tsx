@@ -90,26 +90,20 @@ export function UsersPage() {
 
   const handleSuspend = async (userId: number) => {
     try {
-      // API 연동 시도
       await usersApi.suspend(userId)
-      alert("사용자가 정지되었습니다.")
-      // 실제 구현에서는 데이터 다시 로드
+      handleSearch(currentPage)
     } catch (error) {
-      // API 연동 실패 시 프론트 테스트
-      console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+      console.warn("API 연동 실패 - 테스트 모드")
       alert(`사용자 ID ${userId}를 정지합니다. (테스트 모드)`)
     }
   }
 
   const handleUnsuspend = async (userId: number) => {
     try {
-      // API 연동 시도
       await usersApi.unsuspend(userId)
-      alert("사용자 정지가 해제되었습니다.")
-      // 실제 구현에서는 데이터 다시 로드
+      handleSearch(currentPage)
     } catch (error) {
-      // API 연동 실패 시 프론트 테스트
-      console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+      console.warn("API 연동 실패 - 테스트 모드")
       alert(`사용자 ID ${userId}의 정지를 해제합니다. (테스트 모드)`)
     }
   }
@@ -121,14 +115,11 @@ export function UsersPage() {
   const handleDeleteConfirm = async () => {
     if (deleteConfirmUserId) {
       try {
-        // API 연동 시도
         await usersApi.delete(deleteConfirmUserId)
-        alert("사용자가 삭제되었습니다.")
         setDeleteConfirmUserId(null)
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(1)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`사용자 ID ${deleteConfirmUserId}를 삭제합니다. (테스트 모드)`)
         setDeleteConfirmUserId(null)
       }

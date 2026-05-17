@@ -10,10 +10,13 @@ const { authenticate } = require("./infrastructure/middleware/auth");
 
 // ── 응용 계층 ───────────────────────────────
 const FeedbackService = require("./application/FeedbackService");
+const InternalAdminService = require("./application/InternalAdminService");
 
 // ── 인터페이스 계층 ─────────────────────────
 const FeedbackController = require("./interfaces/FeedbackController");
+const InternalAdminController = require("./interfaces/InternalAdminController");
 const createFeedbackRoutes = require("./interfaces/routes/feedbackRoutes");
+const createInternalAdminRoutes = require("./interfaces/routes/internalAdminRoutes");
 
 // ── 의존성 조립 (Composition Root) ──────────
 const feedbackRepository = new FeedbackRepositoryImpl(pool);
@@ -23,6 +26,8 @@ const feedbackService = new FeedbackService(
   diagnosisClient,
 );
 const feedbackController = new FeedbackController(feedbackService);
+const internalAdminService = new InternalAdminService(pool);
+const internalAdminController = new InternalAdminController(internalAdminService);
 
 // ── Express 앱 설정 ─────────────────────────
 const app = express();
@@ -45,6 +50,7 @@ app.use(
   "/api/v1/feedback",
   createFeedbackRoutes(feedbackController, authenticate),
 );
+app.use("/internal/admin", createInternalAdminRoutes(internalAdminController));
 
 // 전역 에러 핸들링
 app.use((err, req, res, next) => {

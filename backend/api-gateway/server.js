@@ -131,6 +131,7 @@ const contentAccess = (req, res, next) => {
 };
 app.use("/api/v1/notices", contentAccess);
 app.use("/api/v1/encyclopedia", contentAccess);
+app.use("/api/v1/diseases", contentAccess);
 app.use("/api/v1/content", contentAccess);
 
 // hospitals: 인증

@@ -6,16 +6,21 @@ const DiagnosisRepositoryImpl = require("./infrastructure/db/DiagnosisRepository
 const { authenticate, requireAdmin } = require("./infrastructure/middleware/auth");
 const DiagnosisService = require("./application/DiagnosisService");
 const InternalMonitoringService = require("./application/InternalMonitoringService");
+const InternalAdminService = require("./application/InternalAdminService");
 const DiagnosisController = require("./interfaces/DiagnosisController");
 const InternalMonitoringController = require("./interfaces/InternalMonitoringController");
+const InternalAdminController = require("./interfaces/InternalAdminController");
 const createDiagnosisRoutes = require("./interfaces/routes/diagnosisRoutes");
 const createInternalMonitoringRoutes = require("./interfaces/routes/internalMonitoringRoutes");
+const createInternalAdminRoutes = require("./interfaces/routes/internalAdminRoutes");
 
 const diagnosisRepository = new DiagnosisRepositoryImpl(pool);
 const diagnosisService = new DiagnosisService(diagnosisRepository);
 const diagnosisController = new DiagnosisController(diagnosisService);
 const internalMonitoringService = new InternalMonitoringService(pool);
 const internalMonitoringController = new InternalMonitoringController(internalMonitoringService);
+const internalAdminService = new InternalAdminService(pool);
+const internalAdminController = new InternalAdminController(internalAdminService);
 
 const app = express();
 const port = process.env.PORT || 3004;
@@ -32,6 +37,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/v1/diagnoses", createDiagnosisRoutes(diagnosisController, authenticate, requireAdmin));
 app.use("/internal/monitoring", createInternalMonitoringRoutes(internalMonitoringController));
+app.use("/internal/admin", createInternalAdminRoutes(internalAdminController));
 
 app.use((err, req, res, next) => {
   console.error(`[diagnosis-service] ${req.method} ${req.originalUrl}`, err.message);
