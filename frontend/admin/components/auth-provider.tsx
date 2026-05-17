@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const refreshToken = loginData.refresh_token || loginData.refreshToken;
       const userEmail = loginData?.user?.email || email;
 
-      if (response.success === false || !accessToken || !refreshToken) {
+      if (response.success === false || !accessToken || !refreshToken || loginData.user?.role !== 'admin') {
         return false;
       }
 

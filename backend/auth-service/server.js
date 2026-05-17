@@ -35,6 +35,18 @@ app.get("/health", (req, res) => {
 });
 app.use("/api/v1/auth", createAuthRoutes(authController, authenticate));
 
+const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
+app.delete("/internal/users/:userId", (req, res, next) => {
+  if (req.headers["x-internal-token"] !== INTERNAL_TOKEN)
+    return res.status(403).json({ success: false, message: "Forbidden" });
+  next();
+}, async (req, res, next) => {
+  try {
+    await authService.deleteByUserId(req.params.userId);
+    res.json({ success: true });
+  } catch (e) { next(e); }
+});
+
 app.use((err, req, res, next) => {
   console.error(`[auth-service] ${req.method} ${req.originalUrl}`, err.message);
   res

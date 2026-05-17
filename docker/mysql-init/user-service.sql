@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone         VARCHAR(20) DEFAULT NULL,         -- 전화번호 (선택)
   birth_date    DATE DEFAULT NULL,                -- 생년월일 (선택)
   gender        ENUM('M', 'F', 'OTHER') DEFAULT NULL, -- 성별 (선택)
-  status        ENUM('active', 'inactive', 'suspended') DEFAULT 'active', -- 계정 상태
+  status        ENUM('active', 'suspended') DEFAULT 'active', -- 계정 상태
   last_login_at DATETIME DEFAULT NULL,            -- 마지막 로그인 시각
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -1,3 +1,6 @@
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:3002";
+const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
+
 class InternalAdminService {
   constructor(pool) {
     this.pool = pool;
@@ -33,6 +36,16 @@ class InternalAdminService {
       [userId],
     );
     return rows[0] || { user_id: Number(userId), status };
+  }
+
+  async deleteUser(userId) {
+    await this.pool.execute("DELETE FROM users WHERE user_id = ?", [userId]);
+    try {
+      await fetch(`${AUTH_SERVICE_URL}/internal/users/${userId}`, {
+        method: "DELETE",
+        headers: { "x-internal-token": INTERNAL_TOKEN },
+      });
+    } catch { /* best-effort */ }
   }
 }
 

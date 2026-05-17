@@ -10,14 +10,8 @@ const UserModel = require("../models/UserModel");
 const DomainError = require("./DomainError");
 
 class User extends UserModel {
-  // ── 계정 활성 상태 확인 ────────────────────
   isActive() {
     return this.status === "active";
-  }
-
-  // ── 회원 탈퇴 시 상태를 inactive로 변경 ────
-  deactivate() {
-    this.status = "inactive";
   }
 }
 

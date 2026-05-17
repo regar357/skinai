@@ -29,7 +29,7 @@ class InternalAdminController {
 
   deleteUser = async (req, res, next) => {
     try {
-      await this.service.updateStatus(req.params.userId, "inactive");
+      await this.service.deleteUser(req.params.userId);
       res.json({ success: true });
     } catch (e) { next(e); }
   };
