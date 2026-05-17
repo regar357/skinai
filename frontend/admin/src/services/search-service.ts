@@ -149,10 +149,12 @@ class SearchService {
   async searchUsers(params: SearchParams): Promise<SearchResult<MockUser>> {
     if (this.useApi) {
       try {
+        const statusMap: Record<string, string> = { '활성': 'active', '정지': 'suspended' };
+        const apiStatus = statusMap[params.filters?.status || ''] || '';
         const res = await usersApi.getAll(
           params.page || 1,
           params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE,
-          params.filters?.status || ''
+          apiStatus
         ) as any;
 
         const items = (res.data?.data || res.data || []).map((u: any) => ({

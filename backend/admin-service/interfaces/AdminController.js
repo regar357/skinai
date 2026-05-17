@@ -16,7 +16,8 @@ class AdminController {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
-      const status = req.query.status;
+      const rawStatus = req.query.status;
+      const status = (rawStatus && rawStatus !== 'all') ? rawStatus : undefined;
       const result = await this.adminService.getUsers({
         page,
         limit,
