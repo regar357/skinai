@@ -151,17 +151,36 @@ export const feedbackService = {
   sendFeedback(payload: { rating: number; message: string }) {
     return apiRequest<void>("/feedback", {
       method: "POST",
-
       headers: { "Content-Type": "application/json" },
-
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ rating: payload.rating, content: payload.message }),
     });
   },
 
-  getMyFeedbacks(page = 1, size = 10) {
-    return apiRequest<PaginatedResponse<FeedbackItem>>(
-      `/feedback/my?page=${page}&size=${size}`,
-    );
+  async getMyFeedbacks(page = 1, size = 10): Promise<PaginatedResponse<FeedbackItem>> {
+    const raw = await apiRequest<any>(`/feedback/my?page=${page}&limit=${size}`);
+    const rows: any[] = raw.data ?? raw.items ?? [];
+    const pg = raw.pagination ?? {};
+    return {
+      items: rows.map((f) => ({
+        id: f.feedback_id ?? f.id,
+        userId: f.user_id ?? f.userId,
+        userName: f.user_name ?? "",
+        userEmail: f.user_email ?? "",
+        rating: f.rating,
+        message: f.content ?? f.message ?? "",
+        createdAt: f.created_at ?? f.createdAt ?? "",
+        status: f.reply_text ? "resolved" : "pending",
+        adminReply: f.reply_text ?? undefined,
+        adminReplyAt: f.replied_at ?? undefined,
+      })),
+      pagination: {
+        currentPage: pg.page ?? page,
+        totalPages: pg.totalPages ?? 1,
+        totalItems: pg.total ?? rows.length,
+        hasNext: (pg.page ?? page) < (pg.totalPages ?? 1),
+        hasPrev: (pg.page ?? page) > 1,
+      },
+    };
   },
 
   deleteMyFeedback(id: number) {

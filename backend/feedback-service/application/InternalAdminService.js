@@ -1,26 +1,12 @@
 class InternalAdminService {
   constructor(pool) {
     this.pool = pool;
-    this._migrate();
-  }
-
-  async _migrate() {
-    try {
-      await this.pool.execute(
-        "ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS reply_text TEXT DEFAULT NULL",
-      );
-      await this.pool.execute(
-        "ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS replied_at DATETIME DEFAULT NULL",
-      );
-    } catch (e) {
-      console.warn("[feedback-service] migration warning:", e.message);
-    }
   }
 
   async getFeedbacks({ page = 1, limit = 10 }) {
     const offset = (page - 1) * limit;
     const [rows] = await this.pool.execute(
-      `SELECT feedback_id, user_id, diagnosis_id, rating, content,
+      `SELECT feedback_id, user_id, rating, content,
               reply_text, replied_at, created_at
        FROM feedbacks ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [String(limit), String(offset)],
