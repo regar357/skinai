@@ -60,7 +60,9 @@ export function EncyclopediaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 5;
-  const [entries, setEntries] = useState(encyclopediaData);
+  const [entries, setEntries] = useState(() =>
+    encyclopediaData.slice(0, itemsPerPage)
+  );
   const [totalCount, setTotalCount] = useState(encyclopediaData.length);
 
   const toggleItem = (id: number) => {
@@ -83,10 +85,8 @@ export function EncyclopediaPage() {
           }));
           setEntries(mapped);
           setTotalCount(response.pagination.totalItems);
-        } else {
-          setEntries([]);
-          setTotalCount(0);
         }
+        // API가 빈 배열을 반환하면 목업 데이터를 유지한다
       } catch {
         // API 미연결 시 목업 데이터를 유지한다.
         const filtered = encyclopediaData.filter(

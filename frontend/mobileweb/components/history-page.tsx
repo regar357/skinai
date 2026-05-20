@@ -278,14 +278,17 @@ export function HistoryPage() {
     const loadHistory = async () => {
       try {
         const response = await diagnosisService.getHistory(1, 50)
-        const mapped = response.items.map((item) => ({
-          id: item.id,
-          date: item.date,
-          result: item.result,
-          score: item.score,
-          thumbnail: item.thumbnail,
-        }))
-        setHistory(mapped)
+        if (response.items.length > 0) {
+          const mapped = response.items.map((item) => ({
+            id: item.id,
+            date: item.date,
+            result: item.result,
+            score: item.score,
+            thumbnail: item.thumbnail,
+          }))
+          setHistory(mapped)
+        }
+        // API가 빈 배열을 반환하면 목업 데이터를 유지한다
       } catch {
         // API 미연결 상태에서는 기존 목업 데이터를 그대로 사용한다.
       }

@@ -59,7 +59,9 @@ export function HospitalFinderPage() {
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 3
-  const [hospitals, setHospitals] = useState(hospitalsData)
+  const [hospitals, setHospitals] = useState(() =>
+    hospitalsData.slice(0, itemsPerPage)
+  )
   const [totalCount, setTotalCount] = useState(hospitalsData.length)
 
   useEffect(() => {
