@@ -36,57 +36,6 @@ const DEFAULT_LOCATION: LocationPoint = {
   lng: 127.0276,
 }
 
-const hospitalsData = [
-  {
-    id: 1,
-    name: "서울 스킨 클리닉",
-    address: "서울시 강남구 테헤란로 123",
-    phone: "02-1234-5678",
-    hours: "09:00 - 18:00",
-    rating: 4.8,
-    distance: "0.5km",
-    isOpen: true,
-    latitude: 37.4997,
-    longitude: 127.0324,
-  },
-  {
-    id: 2,
-    name: "피부과 전문의원",
-    address: "서울시 서초구 반포대로 456",
-    phone: "02-2345-6789",
-    hours: "10:00 - 19:00",
-    rating: 4.6,
-    distance: "1.2km",
-    isOpen: true,
-    latitude: 37.5035,
-    longitude: 127.0058,
-  },
-  {
-    id: 3,
-    name: "연세 피부과",
-    address: "서울시 강남구 압구정로 789",
-    phone: "02-3456-7890",
-    hours: "09:30 - 17:30",
-    rating: 4.9,
-    distance: "1.8km",
-    isOpen: false,
-    latitude: 37.5274,
-    longitude: 127.0286,
-  },
-  {
-    id: 4,
-    name: "삼성 피부과 의원",
-    address: "서울시 송파구 올림픽로 321",
-    phone: "02-4567-8901",
-    hours: "08:30 - 18:30",
-    rating: 4.7,
-    distance: "2.3km",
-    isOpen: true,
-    latitude: 37.5145,
-    longitude: 127.1059,
-  },
-] satisfies HospitalCard[]
-
 function getPhoneHref(phone: string | null) {
   const digits = phone?.replace(/[^\d+]/g, "")
   return digits ? `tel:${digits}` : undefined
@@ -114,10 +63,12 @@ export function HospitalFinderPage() {
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 3
-  const [hospitals, setHospitals] = useState<HospitalCard[]>(hospitalsData)
-  const [totalCount, setTotalCount] = useState(hospitalsData.length)
+  const [hospitals, setHospitals] = useState<HospitalCard[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [currentLocation, setCurrentLocation] = useState<LocationPoint>(DEFAULT_LOCATION)
   const [locationLabel, setLocationLabel] = useState("서울시 강남구")
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -149,6 +100,9 @@ export function HospitalFinderPage() {
 
   useEffect(() => {
     const loadHospitals = async () => {
+      setIsLoading(true)
+      setErrorMessage(null)
+
       try {
         const response = await hospitalService.getNearby({
           lat: currentLocation.lat,
@@ -170,20 +124,15 @@ export function HospitalFinderPage() {
           longitude: item.longitude,
           mapUrl: item.mapUrl,
         }))
-        if (mapped.length === 0) {
-          throw new Error("No hospitals returned")
-        }
+
         setHospitals(mapped)
         setTotalCount(response.pagination?.totalItems ?? mapped.length)
       } catch {
-        // API 미연결 시 목업 데이터를 유지한다.
-        const sorted = [...hospitalsData].sort((a, b) => {
-          if (sortBy === "distance") return a.distance.localeCompare(b.distance)
-          return b.rating - a.rating
-        })
-        const startIndex = (currentPage - 1) * itemsPerPage
-        setHospitals(sorted.slice(startIndex, startIndex + itemsPerPage))
-        setTotalCount(hospitalsData.length)
+        setHospitals([])
+        setTotalCount(0)
+        setErrorMessage("병원 정보를 불러오지 못했습니다.")
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -256,7 +205,21 @@ export function HospitalFinderPage() {
           </button>
         </div>
 
-        {hospitals.map((hospital, i) => (
+        {isLoading && (
+          <div className="rounded-[22px] border border-white/40 bg-white/60 p-6 text-center shadow-lg shadow-blue-100/15 backdrop-blur-xl">
+            <p className="text-sm font-semibold text-slate-600">주변 병원을 검색 중입니다.</p>
+          </div>
+        )}
+
+        {!isLoading && hospitals.length === 0 && (
+          <div className="rounded-[22px] border border-white/40 bg-white/60 p-6 text-center shadow-lg shadow-blue-100/15 backdrop-blur-xl">
+            <p className="text-sm font-semibold text-slate-700">
+              {errorMessage ?? "현재 위치 주변에 등록된 병원이 없습니다."}
+            </p>
+          </div>
+        )}
+
+        {!isLoading && hospitals.map((hospital) => (
           <div
             key={hospital.id}
             className="rounded-[22px] border border-white/40 bg-white/60 p-5 shadow-lg shadow-blue-100/15 backdrop-blur-xl transition-all hover:scale-[1.02] hover:shadow-xl"

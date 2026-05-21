@@ -23,7 +23,7 @@
  *     - POST/PUT/DELETE        관리자 전용
  *   /api/v1/content/**       → content-service (3005)     - (호환용)
  *
- *   /api/v1/hospitals/**     → hospital-service (3006)    - 인증 필요
+ *   /api/v1/hospitals/**     → hospital-service (3006)    - GET 공개
  *
  *   /api/v1/feedback/**      → feedback-service (3007)    - 인증 필요
  *
@@ -134,12 +134,8 @@ app.use("/api/v1/encyclopedia", contentAccess);
 app.use("/api/v1/diseases", contentAccess);
 app.use("/api/v1/content", contentAccess);
 
-// hospitals: 인증
-app.use(
-  "/api/v1/hospitals",
-  authenticate,
-  buildProxy(TARGETS.hospital, "hospital"),
-);
+// hospitals: 병원 검색/지도 조회는 공개 데이터이므로 GET은 공개
+app.use("/api/v1/hospitals", optionalAuth, buildProxy(TARGETS.hospital, "hospital"));
 
 // feedback: 인증
 app.use(
