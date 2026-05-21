@@ -35,6 +35,19 @@ class HospitalController {
     }
   };
 
+  reverseGeocode = async (req, res, next) => {
+    try {
+      const { lat, lng } = req.query;
+      const result = await this.hospitalService.reverseGeocode({
+        latitude: parseFloat(lat),
+        longitude: parseFloat(lng),
+      });
+      res.status(200).json({ success: true, data: result });
+    } catch (e) {
+      next(e);
+    }
+  };
+
   getById = async (req, res, next) => {
     try {
       const hospital = await this.hospitalService.getHospitalById(

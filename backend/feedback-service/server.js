@@ -19,6 +19,20 @@ const createInternalAdminRoutes = require("./interfaces/routes/internalAdminRout
 
 // ── DB 마이그레이션 (diagnosis_id 제거) ──────
 async function migrate() {
+  const addColumnIfMissing = async (columnName, definition) => {
+    const [rows] = await pool.execute(
+      `
+        SELECT COLUMN_NAME FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'feedbacks'
+          AND COLUMN_NAME = ?
+      `,
+      [columnName],
+    );
+    if (rows.length === 0) {
+      await pool.execute(`ALTER TABLE feedbacks ADD COLUMN ${definition}`);
+    }
+  };
+
   try {
     // FK 제거
     const [fkRows] = await pool.execute(`
@@ -39,10 +53,8 @@ async function migrate() {
   try {
     await pool.execute("DROP TABLE IF EXISTS diagnoses");
   } catch (e) { /* table not found */ }
-  try {
-    await pool.execute("ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS reply_text TEXT DEFAULT NULL");
-    await pool.execute("ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS replied_at DATETIME DEFAULT NULL");
-  } catch (e) { /* columns already exist */ }
+  await addColumnIfMissing("reply_text", "reply_text TEXT DEFAULT NULL");
+  await addColumnIfMissing("replied_at", "replied_at DATETIME DEFAULT NULL");
 }
 migrate().catch((e) => console.warn("[feedback-service] migration warn:", e.message));
 

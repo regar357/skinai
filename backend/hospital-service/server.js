@@ -11,6 +11,7 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./infrastructure/db/pool");
 const HospitalRepositoryImpl = require("./infrastructure/db/HospitalRepositoryImpl");
+const NaverMapClient = require("./infrastructure/NaverMapClient");
 const { authenticate } = require("./infrastructure/middleware/auth");
 const HospitalService = require("./application/HospitalService");
 const HospitalController = require("./interfaces/HospitalController");
@@ -18,7 +19,8 @@ const createHospitalRoutes = require("./interfaces/routes/hospitalRoutes");
 
 // 의존성 조립
 const hospitalRepository = new HospitalRepositoryImpl(pool);
-const hospitalService = new HospitalService(hospitalRepository);
+const naverMapClient = new NaverMapClient();
+const hospitalService = new HospitalService(hospitalRepository, naverMapClient);
 const hospitalController = new HospitalController(hospitalService);
 
 const app = express();

@@ -119,7 +119,17 @@ export interface HospitalItem {
   rating: number
   distanceKm: number
   isOpen: boolean
+  latitude?: number
+  longitude?: number
   mapUrl?: string
+}
+
+export interface ReverseGeocodeResult {
+  address: string
+  region1?: string
+  region2?: string
+  region3?: string
+  source?: "naver" | "fallback"
 }
 
 export interface Notice {

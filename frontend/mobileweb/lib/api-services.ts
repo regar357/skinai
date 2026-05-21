@@ -13,7 +13,23 @@ import type {
   HospitalItem,
   Notice,
   PaginatedResponse,
+  ReverseGeocodeResult,
 } from "@/types/api";
+
+type ApiEnvelope<T> = {
+  success: boolean;
+  data: T;
+  pagination?: {
+    page?: number;
+    size?: number;
+    total?: number;
+    totalPages?: number;
+    currentPage?: number;
+    totalItems?: number;
+    hasNext?: boolean;
+    hasPrev?: boolean;
+  };
+};
 
 export const authService = {
   async login(payload: { email: string; password: string }) {
@@ -199,7 +215,7 @@ export const encyclopediaService = {
 };
 
 export const hospitalService = {
-  getNearby(params: {
+  async getNearby(params: {
     lat: number;
     lng: number;
     sort?: "distance" | "rating";
@@ -208,8 +224,38 @@ export const hospitalService = {
   }) {
     const { lat, lng, sort = "distance", page = 1, size = 3 } = params;
 
-    return apiRequest<PaginatedResponse<HospitalItem>>(
+    const response = await apiRequest<
+      PaginatedResponse<HospitalItem> | ApiEnvelope<HospitalItem[]>
+    >(
       `/hospitals/nearby?lat=${lat}&lng=${lng}&sort=${sort}&page=${page}&size=${size}`,
     );
+
+    if ("items" in response) {
+      return response;
+    }
+
+    const totalItems = response.pagination?.total ?? response.data.length;
+    const totalPages =
+      response.pagination?.totalPages ?? Math.max(1, Math.ceil(totalItems / size));
+    const currentPage = response.pagination?.page ?? page;
+
+    return {
+      items: response.data,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalItems,
+        hasNext: currentPage < totalPages,
+        hasPrev: currentPage > 1,
+      },
+    };
+  },
+
+  async reverseGeocode(lat: number, lng: number) {
+    const response = await apiRequest<
+      ReverseGeocodeResult | ApiEnvelope<ReverseGeocodeResult>
+    >(`/hospitals/reverse-geocode?lat=${lat}&lng=${lng}`);
+
+    return "data" in response ? response.data : response;
   },
 };
