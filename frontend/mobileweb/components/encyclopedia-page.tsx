@@ -60,7 +60,7 @@ export function EncyclopediaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 5;
-  const [entries, setEntries] = useState(encyclopediaData);
+  const [entries, setEntries] = useState(encyclopediaData.slice(0, 5));
   const [totalCount, setTotalCount] = useState(encyclopediaData.length);
 
   const toggleItem = (id: number) => {
