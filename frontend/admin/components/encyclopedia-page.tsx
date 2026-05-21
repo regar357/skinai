@@ -16,6 +16,82 @@ import { Plus, Search } from "lucide-react"
 import { contentApi } from "@/src/api/content"
 import { searchService, MockEncyclopediaEntry } from "@/src/services/search-service"
 
+// 목업 피부종양 백과 데이터
+const mockEncyclopedia: MockEncyclopediaEntry[] = [
+  {
+    id: 1,
+    title: "기저세포암",
+    description: "기저세포암(Basal Cell Carcinoma)은 피부암 중 가장 흔한 형태로, 대부분 햇빛에 노출된 부위에 발생합니다. 주로 얼굴, 목, 손등 등에 나타나며, 진주처럼 반짝이는 융기된 병변과 함께 혈관이 확장된 모습을 보입니다.\n\n[증상]\n- 반짝이는 진주색 융기\n- 중앙이 움푹 들어간 모양\n- 가장자리가 둥글게 솟아오름\n- 출혈이나 궤양 형성\n\n[치료]\n- 수술적 절제\n- 전기소작술\n- 냉동요법\n- 국소 약물 치료",
+    modifiedDate: "2024-07-20"
+  },
+  {
+    id: 2,
+    title: "편평세포암",
+    description: "편평세포암(Squamous Cell Carcinoma)은 피부의 각질형성세포에서 발생하는 악성 종양입니다. 주로 햇빛에 장기간 노출된 부위인 얼굴, 귀, 손등, 팔 등에 발생하며, 자라나는 속도가 비교적 빠릅니다.\n\n[증상]\n- 경화된 붉은 반점\n- 비늘 모양의 표면\n- 통증이나 출혈\n- 빠르게 커지는 융기 병변\n\n[치료]\n- 외과적 절제\n- Mohs 수술\n- 방사선 치료\n- 화학요법(진행된 경우)",
+    modifiedDate: "2024-07-18"
+  },
+  {
+    id: 3,
+    title: "흑색종",
+    description: "흑색종(Melanoma)은 색소를 생성하는 멜라닌 세포에서 시작하는 가장 위험한 피부암입니다. 조기 발견 시 완치율이 높지만, 전이가 발생하면 생명을 위협할 수 있습니다.\n\n[증상 - ABCDE 법칙]\n- A(Asymmetry): 비대칭\n- B(Border): 울퉁불퉁한 가장자리\n- C(Color): 색이 고르지 않음\n- D(Diameter): 6mm 이상\n- E(Evolving): 시간이 지나며 변화\n\n[치료]\n- 수술적 절제(광범위 절제)\n- 림프절 절제\n- 면역요법\n- 표적 치료",
+    modifiedDate: "2024-07-15"
+  },
+  {
+    id: 4,
+    title: "지루성 각화증",
+    description: "지루성 각화증(Seborrheic Keratosis)은 노화로 인해 발생하는 양성 피부 종양입니다. 암으로 발전하지 않지만, 외관상 흑색종과 혼동될 수 있어 주의가 필요합니다.\n\n[증상]\n- 갈색에서 검은색까지 다양한 색상\n- 약간 둥근 모양\n- 기름진 표면\n- '붙여놓은 것' 같은 외관\n- 크기 1mm ~ 5cm\n\n[치료]\n- 냉동요법\n- 전기소작술\n- 레이저 치료\n- 필요시 절제",
+    modifiedDate: "2024-07-12"
+  },
+  {
+    id: 5,
+    title: "양성 멜라닌 세포 모반",
+    description: "양성 멜라닌 세포 모반(Benign Melanocytic Nevus)은 일반적으로 '점'이라고 불리는 양성 피부 병변입니다. 선천적으로 있거나 후천적으로 발생할 수 있으며, 대부분 무해합니다.\n\n[특징]\n- 균일한 색상(갈색, 검은색, 분홍색 등)\n- 둥글거나 타원형\n- 가장자리가 매끄러움\n- 크기는 작음(보통 6mm 이하)\n- 시간이 지나도 거의 변화 없음\n\n[주의사항]\n- 모반의 변화가 있을 시 의료진 상담 필요",
+    modifiedDate: "2024-07-10"
+  },
+  {
+    id: 6,
+    title: "악성 흑색종 변종",
+    description: "악성 흑색종에는 여러 변종이 있으며, 각각 다른 임상적 특징을 보입니다.\n\n[주요 변종]\n- 표재 확장성 흑색종: 가장 흔한 형태, 수평 성장 단계\n- 결절성 흑색종: 수직 성장, 빠른 전이\n- 렌티고 악성 흑색종: 노인, 햇빛 손상 부위\n- 띰색소성 흑색종: 색소가 없는 형태\n\n[진단]\n- 피부 조직 검사가 필수적\n- 병기 결정을 위한 영상 검사\n- SLNB(전哨 림프절 생검)",
+    modifiedDate: "2024-07-08"
+  },
+  {
+    id: 7,
+    title: "피부섬유종",
+    description: "피부섬유종(Dermatofibroma)은 양성 섬유종양으로, 주로 다리에 발생하는 작은 단단한 융기입니다. 대부분 무증상이며, 외상 후 발생하는 경우가 많습니다.\n\n[증상]\n- 작은 단단한 융기(5-10mm)\n- 갈색, 적갈색, 보라색\n- 누르면 움푹 들어감\n- 주로 다리에 발생\n- 통증이나 간지러움은 흔하지 않음\n\n[치료]\n- 대부분 치료 불필요\n- 제거 시 외과적 절제\n- 냉동요법",
+    modifiedDate: "2024-07-05"
+  },
+  {
+    id: 8,
+    title: "日光각화증",
+    description: "日光각화증(Actinic Keratosis)은 장기간 자외선 노출로 인한 피부의 전암 병변입니다. 편평세포암으로 발전할 가능성이 있어 적극적인 치료가 필요합니다.\n\n[증상]\n- 거친 비늘 모양의 반점\n- 붉거나 갈색\n- 크기 2-6mm\n- 주로 햇빛 노출 부위\n- 만지면 거친 느낌\n\n[치료]\n- 냉동요법\n- 국소 약물 치료(5-FU, 이미쿼드 등)\n- 화학박피\n- 레이저 치료",
+    modifiedDate: "2024-07-01"
+  },
+  {
+    id: 9,
+    title: "카포시 육종",
+    description: "카포시 육종(Kaposi Sarcoma)은 인간 헤르페스바이러스 8(HHV-8) 감염과 관련된 혈관 종양입니다. 면역저하 환자에서 발생률이 높으며, AIDS 관련 형태가 가장 흔합니다.\n\n[증상]\n- 보라색, 적갈색, 갈색 반점\n- 피부와 점막에 발생\n- 점차 융기되며 팽대\n- 다발성 병변\n- 간지러움 가능\n\n[치료]\n- 항레트로바이러스 치료(AIDS형)\n- 화학요법\n- 방사선 치료\n- 국소 치료",
+    modifiedDate: "2024-06-28"
+  },
+  {
+    id: 10,
+    title: "피부림프종",
+    description: "피부림프종(Cutaneous Lymphoma)은 림프구가 피부에서 악성화된 것입니다. 원발성(피부가 원발 부위)과 이차성(전신 림프종의 피부 침윤)으로 구분됩니다.\n\n[증상]\n- 붉은 반점, 패치, 융기\n- 두드러지는 병변\n- 간지러움\n- 다양한 형태\n- 천천히 진행\n\n[치료]\n- 국외 방사선 치료\n- 국소 스테로이드\n- 화학요법\n- 광화학요법(PUVA)",
+    modifiedDate: "2024-06-25"
+  },
+  {
+    id: 11,
+    title: "혈관종",
+    description: "혈관종(Hemangioma)은 혈관 세포의 양성 증식으로 발생하는 종양입니다. 유아에서 흔하게 발생하며, 대부분 자연 소실되지만 일부는 치료가 필요합니다.\n\n[특징]\n- 선홍색에서 진홍색 반점\n- 출생 시 또는 생후 수주 내 발생\n- 급격한 성장 후 정체\n- 대부분 5-9세에 자연 소실\n- 머리, 목, 몸통에 흔함\n\n[치료]\n- 대부분 관찰만 필요\n- 베타 차단제(프로프라놀롤)\n- 레이저 치료\n- 수술",
+    modifiedDate: "2024-06-20"
+  },
+  {
+    id: 12,
+    title: "지루성 피부염",
+    description: "지루성 피부염(Seborrheic Dermatitis)은 피지 분비가 많은 부위에 발생하는 만성 염증성 피부 질환입니다. 비듬과 밀접한 관련이 있습니다.\n\n[증상]\n- 붉은 반점과 황색 비늘\n- 두피, 얼굴 T존, 가슴 등\n- 가려움증\n- 기름진 비늘\n- 재발 경향\n\n[치료]\n- 항진균 샴푸(두피)\n- 국소 스테로이드\n- 칼시뉴린 억제제\n- 항진균제",
+    modifiedDate: "2024-06-15"
+  }
+];
+
 export function EncyclopediaPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
@@ -25,25 +101,32 @@ export function EncyclopediaPage() {
   const [editingEntry, setEditingEntry] = useState<{ id: number; title: string; description: string } | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<{ id: number; title: string; description: string } | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const [entries, setEntries] = useState<MockEncyclopediaEntry[]>([])
+  const [entries, setEntries] = useState<MockEncyclopediaEntry[]>(mockEncyclopedia)
   const [loading, setLoading] = useState(false)
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: mockEncyclopedia.length })
   const [currentPage, setCurrentPage] = useState(1)
 
   // 검색 기능
   const handleSearch = async (page: number = 1) => {
     setLoading(true)
     try {
-      const result = await searchService.searchEncyclopedia({
-        query: searchTerm,
-        page: page,
-        pageSize: 10
-      })
-      setEntries(result.data)
+      // 목업 데이터 필터링 및 페이징
+      const query = searchTerm.toLowerCase()
+      const filtered = mockEncyclopedia.filter(e => 
+        !query || 
+        e.title.toLowerCase().includes(query) || 
+        e.description.toLowerCase().includes(query)
+      )
+      
+      const startIndex = (page - 1) * 10
+      const endIndex = startIndex + 10
+      const paginatedData = filtered.slice(startIndex, endIndex)
+      
+      setEntries(paginatedData)
       setPagination({
-        page: result.page,
-        pageSize: result.pageSize,
-        total: result.total
+        page: page,
+        pageSize: 10,
+        total: filtered.length
       })
       setCurrentPage(page)
     } catch (error) {
@@ -201,22 +284,23 @@ export function EncyclopediaPage() {
                   <TableCell className="py-4 font-medium text-blue-600">
                     {entry.title}
                   </TableCell>
-                  <TableCell className="py-4 text-gray-600">
+                  <TableCell className="py-4 text-gray-600 max-w-xl">
                     <div className="flex items-start justify-between gap-2">
                       <div 
-                        className="flex-1 overflow-hidden" 
+                        className="flex-1 overflow-hidden text-sm leading-relaxed" 
                         style={{
                           display: '-webkit-box',
                           WebkitLineClamp: 3,
                           WebkitBoxOrient: 'vertical',
-                          textOverflow: 'ellipsis'
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden'
                         }}
                         title={entry.description}
                       >
-                        {entry.description}
+                        {entry.description.replace(/\n/g, ' ')}
                       </div>
                       <button 
-                        className="text-sm text-gray-500 hover:text-gray-700 font-medium whitespace-nowrap flex-shrink-0 underline"
+                        className="text-sm text-gray-500 hover:text-gray-700 font-medium whitespace-nowrap flex-shrink-0 underline ml-2"
                         onClick={() => handleDetail(entry.id)}
                       >
                         상세보기
