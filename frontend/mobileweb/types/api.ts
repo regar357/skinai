@@ -61,20 +61,6 @@ export interface PaginatedResponse<T> {
   pagination: PaginationInfo
 }
 
-// 공유 관련 타입
-export interface ShareRequest {
-  diagnosisId?: number
-  title?: string
-  text?: string
-  url?: string
-}
-
-export interface ShareResponse {
-  shareUrl: string
-  shortUrl?: string
-  qrCode?: string
-}
-
 // 피드백 관련 타입
 export interface FeedbackItem {
   id: number

@@ -43,14 +43,6 @@ export interface Image {
   created_at: string;
 }
 
-export interface Share {
-  share_id: number;
-  analysis_id: number;
-  share_token: string;
-  expires_at: string;
-  created_at: string;
-}
-
 export interface Feedback {
   feedback_id: number;
   user_id: number;
@@ -108,10 +100,6 @@ export interface SignupRequest {
 
 export interface AnalysisRequest {
   image_id: number;
-}
-
-export interface ShareRequest {
-  analysis_id: number;
 }
 
 export interface FeedbackRequest {

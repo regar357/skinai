@@ -8,7 +8,6 @@
 const DiagnosisRepository = require("../../domain/interfaces/DiagnosisRepository");
 const { Diagnosis } = require("../../domain/entities/Diagnosis");
 const { Image } = require("../../domain/entities/Image");
-const { ShareLink } = require("../../domain/entities/ShareLink");
 const { DiagnosisLog } = require("../../domain/entities/DiagnosisLog");
 
 class DiagnosisRepositoryImpl extends DiagnosisRepository {
@@ -97,39 +96,6 @@ class DiagnosisRepositoryImpl extends DiagnosisRepository {
     return rows.map((r) => new Image(r));
   }
 
-  // ── 공유 링크 관련 ────────────────────────
-
-  async saveShareLink(link) {
-    const [result] = await this.pool.execute(
-      "INSERT INTO share_links (diagnosis_id, user_id, share_token, expires_at, is_active, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
-      [
-        link.diagnosis_id,
-        link.user_id,
-        link.share_token,
-        link.expires_at,
-        link.is_active,
-      ],
-    );
-    link.share_id = result.insertId;
-    return link;
-  }
-
-  async findShareLinkByToken(token) {
-    const [rows] = await this.pool.execute(
-      "SELECT * FROM share_links WHERE share_token = ? AND is_active = TRUE",
-      [token],
-    );
-    return rows.length ? new ShareLink(rows[0]) : null;
-  }
-
-  async deactivateShareLink(shareId) {
-    const [r] = await this.pool.execute(
-      "UPDATE share_links SET is_active = FALSE WHERE share_id = ?",
-      [shareId],
-    );
-    return r.affectedRows > 0;
-  }
-
   // ── 로그 관련 ─────────────────────────────
 
   async saveLog(log) {
@@ -165,7 +131,7 @@ class DiagnosisRepositoryImpl extends DiagnosisRepository {
     return rows[0].total;
   }
 
-  // ── 진단 삭제 (관련 이미지/공유링크는 ON DELETE CASCADE 가정) ──
+  // ── 진단 삭제 (관련 이미지는 ON DELETE SET NULL 처리) ──
   async deleteDiagnosis(diagnosisId) {
     const [result] = await this.pool.execute(
       "DELETE FROM diagnoses WHERE diagnosis_id = ?",

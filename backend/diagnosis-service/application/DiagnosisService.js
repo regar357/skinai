@@ -7,12 +7,10 @@
  *   - 이미지 업로드 → S3 저장
  *   - 분석 수행 (AI 서비스 호출)
  *   - 분석 결과 CRUD
- *   - 분석 결과 공유 (공유 링크 생성)
  *   - 분석 로그 기록
  */
 const { Diagnosis, DomainError } = require("../domain/entities/Diagnosis");
 const { Image } = require("../domain/entities/Image");
-const { ShareLink } = require("../domain/entities/ShareLink");
 const { DiagnosisLog } = require("../domain/entities/DiagnosisLog");
 const { v4: uuidv4 } = require("uuid");
 const aiClient = require("../infrastructure/ai/aiClient");
@@ -252,59 +250,6 @@ class DiagnosisService {
     );
 
     return updated;
-  }
-
-  // ─────────────────────────────────────────────
-  // 분석 결과 공유 링크 생성
-  // POST /api/v1/diagnoses/:id/share
-  // ─────────────────────────────────────────────
-  async createShareLink(diagnosisId, userId, expiresInHours = 72) {
-    const d = await this.diagnosisRepository.findDiagnosisById(diagnosisId);
-    if (!d) throw new DomainError("진단 기록을 찾을 수 없습니다.", 404);
-    if (d.user_id !== userId)
-      throw new DomainError("접근 권한이 없습니다.", 403);
-
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + expiresInHours);
-
-    const shareLink = new ShareLink({
-      diagnosis_id: diagnosisId,
-      user_id: userId,
-      share_token: uuidv4(),
-      expires_at: expiresAt,
-    });
-
-    const saved = await this.diagnosisRepository.saveShareLink(shareLink);
-
-    // 로그 기록
-    await this.diagnosisRepository.saveLog(
-      DiagnosisLog.create({
-        diagnosis_id: diagnosisId,
-        user_id: userId,
-        action: "shared",
-        detail: `만료: ${expiresInHours}시간`,
-      }),
-    );
-
-    return saved;
-  }
-
-  // ─────────────────────────────────────────────
-  // 공유 링크로 분석 결과 조회
-  // GET /api/v1/diagnoses/shared/:token
-  // ─────────────────────────────────────────────
-  async getDiagnosisByShareToken(token) {
-    const link = await this.diagnosisRepository.findShareLinkByToken(token);
-    if (!link) throw new DomainError("유효하지 않은 공유 링크입니다.", 404);
-    if (link.isExpired()) throw new DomainError("만료된 공유 링크입니다.", 410);
-
-    const d = await this.diagnosisRepository.findDiagnosisById(
-      link.diagnosis_id,
-    );
-    const images = await this.diagnosisRepository.findImagesByDiagnosisId(
-      link.diagnosis_id,
-    );
-    return { ...d, images };
   }
 
   // ─────────────────────────────────────────────
