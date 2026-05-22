@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import {
   MapPin,
   Phone,
@@ -9,32 +9,32 @@ import {
   Navigation,
   ChevronRight,
   ExternalLink,
-} from "lucide-react"
-import { hospitalService } from "@/lib/api-services"
+} from "lucide-react";
+import { hospitalService } from "@/lib/api-services";
 
 type HospitalCard = {
-  id: number
-  name: string
-  address: string
-  phone: string | null
-  hours: string
-  rating: number
-  distance: string
-  isOpen: boolean
-  latitude?: number
-  longitude?: number
-  mapUrl?: string
-}
+  id: number;
+  name: string;
+  address: string;
+  phone: string | null;
+  hours: string;
+  rating: number;
+  distance: string;
+  isOpen: boolean;
+  latitude?: number;
+  longitude?: number;
+  mapUrl?: string;
+};
 
 type LocationPoint = {
-  lat: number
-  lng: number
-}
+  lat: number;
+  lng: number;
+};
 
 const DEFAULT_LOCATION: LocationPoint = {
   lat: 37.4979,
   lng: 127.0276,
-}
+};
 
 const hospitalsData = [
   {
@@ -85,67 +85,68 @@ const hospitalsData = [
     latitude: 37.5145,
     longitude: 127.1059,
   },
-] satisfies HospitalCard[]
+] satisfies HospitalCard[];
 
 function getPhoneHref(phone: string | null) {
-  const digits = phone?.replace(/[^\d+]/g, "")
-  return digits ? `tel:${digits}` : undefined
+  const digits = phone?.replace(/[^\d+]/g, "");
+  return digits ? `tel:${digits}` : undefined;
 }
 
 function isMobileDevice() {
-  if (typeof navigator === "undefined") return false
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
 function getMapUrl(hospital: HospitalCard, origin: LocationPoint) {
   if (hospital.latitude && hospital.longitude) {
-    const startName = encodeURIComponent("현재 위치")
-    const destinationName = encodeURIComponent(hospital.name)
-    return `https://map.naver.com/p/directions/${origin.lng},${origin.lat},${startName},,/${hospital.longitude},${hospital.latitude},${destinationName},,/car`
+    const startName = encodeURIComponent("현재 위치");
+    const destinationName = encodeURIComponent(hospital.name);
+    return `https://map.naver.com/p/directions/${origin.lng},${origin.lat},${startName},,/${hospital.longitude},${hospital.latitude},${destinationName},,/car`;
   }
 
   return (
     hospital.mapUrl ||
     `https://map.naver.com/p/search/${encodeURIComponent(`${hospital.name} ${hospital.address}`)}`
-  )
+  );
 }
 
 export function HospitalFinderPage() {
-  const [sortBy, setSortBy] = useState<"distance" | "rating">("distance")
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 3
-  const [hospitals, setHospitals] = useState<HospitalCard[]>(hospitalsData)
-  const [totalCount, setTotalCount] = useState(hospitalsData.length)
-  const [currentLocation, setCurrentLocation] = useState<LocationPoint>(DEFAULT_LOCATION)
-  const [locationLabel, setLocationLabel] = useState("서울시 강남구")
+  const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
+  const [hospitals, setHospitals] = useState<HospitalCard[]>(hospitalsData);
+  const [totalCount, setTotalCount] = useState(hospitalsData.length);
+  const [currentLocation, setCurrentLocation] =
+    useState<LocationPoint>(DEFAULT_LOCATION);
+  const [locationLabel, setLocationLabel] = useState("서울시 강남구");
 
   useEffect(() => {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const nextLocation = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        }
-        setCurrentLocation(nextLocation)
+        };
+        setCurrentLocation(nextLocation);
 
         try {
           const result = await hospitalService.reverseGeocode(
             nextLocation.lat,
             nextLocation.lng,
-          )
-          if (result.address) setLocationLabel(result.address)
+          );
+          if (result.address) setLocationLabel(result.address);
         } catch {
-          setLocationLabel("현재 위치")
+          setLocationLabel("현재 위치");
         }
       },
       () => {
-        setLocationLabel("서울시 강남구")
+        setLocationLabel("서울시 강남구");
       },
       { enableHighAccuracy: true, timeout: 7000 },
-    )
-  }, [])
+    );
+  }, []);
 
   useEffect(() => {
     const loadHospitals = async () => {
@@ -156,7 +157,7 @@ export function HospitalFinderPage() {
           sort: sortBy,
           page: currentPage,
           size: itemsPerPage,
-        })
+        });
         const mapped = response.items.map((item) => ({
           id: item.id,
           name: item.name,
@@ -169,48 +170,49 @@ export function HospitalFinderPage() {
           latitude: item.latitude,
           longitude: item.longitude,
           mapUrl: item.mapUrl,
-        }))
+        }));
         if (mapped.length === 0) {
-          throw new Error("No hospitals returned")
+          throw new Error("No hospitals returned");
         }
-        setHospitals(mapped)
-        setTotalCount(response.pagination?.totalItems ?? mapped.length)
+        setHospitals(mapped);
+        setTotalCount(response.pagination?.totalItems ?? mapped.length);
       } catch {
         // API 미연결 시 목업 데이터를 유지한다.
         const sorted = [...hospitalsData].sort((a, b) => {
-          if (sortBy === "distance") return a.distance.localeCompare(b.distance)
-          return b.rating - a.rating
-        })
-        const startIndex = (currentPage - 1) * itemsPerPage
-        setHospitals(sorted.slice(startIndex, startIndex + itemsPerPage))
-        setTotalCount(hospitalsData.length)
+          if (sortBy === "distance")
+            return a.distance.localeCompare(b.distance);
+          return b.rating - a.rating;
+        });
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        setHospitals(sorted.slice(startIndex, startIndex + itemsPerPage));
+        setTotalCount(hospitalsData.length);
       }
-    }
+    };
 
-    void loadHospitals()
-  }, [sortBy, currentPage, currentLocation])
+    void loadHospitals();
+  }, [sortBy, currentPage, currentLocation]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage))
+  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
 
   const handlePhoneClick = async (
     event: React.MouseEvent<HTMLAnchorElement>,
     phone: string | null,
   ) => {
     if (!phone) {
-      event.preventDefault()
-      return
+      event.preventDefault();
+      return;
     }
 
-    if (isMobileDevice()) return
+    if (isMobileDevice()) return;
 
-    event.preventDefault()
+    event.preventDefault();
     try {
-      await navigator.clipboard?.writeText(phone)
-      alert(`전화번호가 복사되었습니다.\n${phone}`)
+      await navigator.clipboard?.writeText(phone);
+      alert(`전화번호가 복사되었습니다.\n${phone}`);
     } catch {
-      alert(`전화번호: ${phone}`)
+      alert(`전화번호: ${phone}`);
     }
-  }
+  };
 
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-8">
@@ -227,7 +229,9 @@ export function HospitalFinderPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30">
             <MapPin className="h-6 w-6 text-white" />
           </div>
-          <p className="text-sm font-medium text-blue-600">현재 위치 기반 검색</p>
+          <p className="text-sm font-medium text-blue-600">
+            현재 위치 기반 검색
+          </p>
           <p className="text-xs text-blue-500/70">{locationLabel}</p>
         </div>
         {/* Decorative dots */}
@@ -246,8 +250,10 @@ export function HospitalFinderPage() {
           <button
             type="button"
             onClick={() => {
-              setSortBy((prev) => (prev === "distance" ? "rating" : "distance"))
-              setCurrentPage(1)
+              setSortBy((prev) =>
+                prev === "distance" ? "rating" : "distance",
+              );
+              setCurrentPage(1);
             }}
             className="flex items-center gap-1 text-sm font-medium text-blue-500 hover:underline"
           >
@@ -293,9 +299,13 @@ export function HospitalFinderPage() {
               <div className="flex flex-col items-end gap-2">
                 <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-bold text-amber-600">{hospital.rating}</span>
+                  <span className="text-sm font-bold text-amber-600">
+                    {hospital.rating}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-blue-500">{hospital.distance}</span>
+                <span className="text-sm font-semibold text-blue-500">
+                  {hospital.distance}
+                </span>
               </div>
             </div>
 
@@ -329,34 +339,38 @@ export function HospitalFinderPage() {
           <div className="flex items-center justify-center gap-2">
             <button
               type="button"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
               className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-100 disabled:opacity-50"
               aria-label="이전 페이지"
             >
               <ChevronRight className="h-4 w-4 rotate-180" />
             </button>
-            
+
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                <button
-                  key={pageNum}
-                  type="button"
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
-                    currentPage === pageNum
-                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
-                      : 'border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm hover:bg-slate-100'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
+                      currentPage === pageNum
+                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25"
+                        : "border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm hover:bg-slate-100"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ),
+              )}
             </div>
-            
+
             <button
               type="button"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
               disabled={currentPage === totalPages}
               className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/40 bg-white/60 text-slate-500 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-100 disabled:opacity-50"
               aria-label="다음 페이지"
@@ -367,5 +381,5 @@ export function HospitalFinderPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

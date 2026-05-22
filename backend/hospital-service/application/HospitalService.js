@@ -30,6 +30,10 @@ class HospitalService {
     // TODO: 네이버 지도 API 연동
     // - Redis 캐싱으로 자주 검색되는 지역 결과 캐싱 (비용 절감)
     // - 요청 횟수 제한 (Rate Limiting)
+    //네이버 api 요청을 해서 주소정보를 받아오는 것
+    //주소 데이터를 사용을 해서 네이버 검색 api 요청을 해서 병원 정보를 응답으로 받아오는 것
+    //병원 정보를 가공을 해서 db에 저장함
+    //db정보를 프론트에 전달하는 것
     const all = await this.hospitalRepository.findNearby(
       latitude,
       longitude,
