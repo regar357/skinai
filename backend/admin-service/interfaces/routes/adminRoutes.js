@@ -53,9 +53,6 @@ const express = require("express");
 const router = express.Router();
 
 module.exports = (ctrl, auth, adminAuth) => {
-  // ── 관리자 로그인 (인증/권한 미들웨어 미적용) ──
-  router.post("/login", ctrl.login);
-
   // ── 사용자 관리 ────────────────────────────
   router.get("/users", auth, adminAuth, ctrl.getUsers);
   router.patch("/users/:userId/suspend", auth, adminAuth, ctrl.suspendUser);

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"d:\\\\project\\\\backend\\\\monitoring-service\" -Recurse | Where-Object { $_.Extension -in \".js\",\".ts\" -and $_.FullName -notmatch \"node_modules\" } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem \"d:\\\\project\\\\backend\\\\monitoring-service\" -Depth 3 | Where-Object { $_.FullName -notmatch \"node_modules\" } | Select-Object FullName, Name)",
+      "Bash(xargs grep -l \"admin\\\\|login\")"
+    ]
+  }
+}

@@ -76,8 +76,9 @@ export async function apiRequest<T>(
     };
 
     try {
-      const parsed = (await response.json()) as ApiErrorResponse;
-      if (parsed?.error?.message) error = parsed;
+      const parsed = (await response.json()) as any;
+      const msg = parsed?.error?.message || parsed?.message;
+      if (msg) error = { success: false, error: { code: `HTTP_${response.status}`, message: msg } };
     } catch {
       // Keep default error shape when server doesn't return JSON.
     }

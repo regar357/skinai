@@ -1,58 +1,60 @@
-/**
- * ═══════════════════════════════════════════════
- * Monitoring Service Client (인프라 계층)
- * ═══════════════════════════════════════════════
- * 
- * 모니터링 서비스에서 다른 서비스로 내부 API 호출
- * - 분석 서비스: 분석 로그 데이터 조회
- * - 사용자 서비스: 사용자 정보 조회
- */
 class MonitoringClient {
   constructor() {
-    this.diagnosisServiceUrl = process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
-    this.userServiceUrl = process.env.USER_SERVICE_URL || "http://localhost:3003";
+    this.diagnosisUrl =
+      process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
+    this.userUrl = process.env.USER_SERVICE_URL || "http://localhost:3003";
+    this.aiUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+    this.internalToken =
+      process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
   }
 
-  async _request(url, options = {}) {
+  async get(url) {
     try {
-      const response = await fetch(url, {
-        headers: { "Content-Type": "application/json", ...options.headers },
-        ...options,
+      const res = await fetch(url, {
+        headers: { "x-internal-token": this.internalToken },
       });
-      if (!response.ok) {
-        return { success: false, message: `서비스 응답 오류: ${response.status}` };
-      }
-      return await response.json();
-    } catch (error) {
-      console.error(`[monitoring-service] Service call failed: ${url}`, error.message);
-      return { success: false, message: `서비스 연결 실패: ${url}` };
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+      return json.body || json.data || json;
+    } catch (e) {
+      console.warn(
+        "[monitoring-service] internal call failed:",
+        url,
+        e.message,
+      );
+      return null;
     }
   }
 
-  // ── 분석 로그 데이터 조회 (AI 진단 모니터링) ──
-  async getDiagnosisLogs(token, page = 1, limit = 20) {
-    return this._request(
-      `${this.diagnosisServiceUrl}/api/v1/diagnoses/logs?page=${page}&limit=${limit}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+  getDiagnosisPerformance() {
+    return this.get(`${this.diagnosisUrl}/internal/monitoring/performance`);
+  }
+
+  getDiseaseAccuracy() {
+    return this.get(
+      `${this.diagnosisUrl}/internal/monitoring/disease-accuracy`,
     );
   }
 
-  // ── 진단별 로그 조회 ──────────────────────────
-  async getDiagnosisLogs(token, diagnosisId) {
-    return this._request(
-      `${this.diagnosisServiceUrl}/api/v1/diagnoses/${diagnosisId}/logs`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  getDailySummary() {
+    return this.get(`${this.diagnosisUrl}/internal/monitoring/daily-summary`);
   }
 
-  // ── 분석 서비스 헬스체크 ──────────────────────
-  async getDiagnosisHealth() {
-    return this._request(`${this.diagnosisServiceUrl}/health`);
+  getAiModelInfo() {
+    return this.get(`${this.aiUrl}/api/admin/monitoring/model-info`);
   }
 
-  // ── 사용자 서비스 헬스체크 ────────────────────
-  async getUserHealth() {
-    return this._request(`${this.userServiceUrl}/health`);
+  getAiSystemStatus() {
+    return this.get(`${this.aiUrl}/api/admin/monitoring/system-status`);
+  }
+
+  // 대시보드용 내부 API
+  getDiagnosisDashboardStats() {
+    return this.get(`${this.diagnosisUrl}/internal/monitoring/dashboard/stats`);
+  }
+
+  getUserDashboardStats() {
+    return this.get(`${this.userUrl}/internal/monitoring/dashboard/user-stats`);
   }
 }
 

@@ -2,7 +2,14 @@ import { ApiResponse, PaginatedResponse } from "./types";
 
 // API Base Configuration
 // 프론트엔드 양식 문서 기준: /api/v1/...
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+const DEVELOPMENT_API_BASE_URL = "http://localhost:3001/api/v1";
+const PRODUCTION_API_BASE_URL = "/api/v1";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "development"
+    ? DEVELOPMENT_API_BASE_URL
+    : PRODUCTION_API_BASE_URL);
 
 class ApiClient {
   private baseURL: string;
@@ -61,7 +68,11 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        const errorMessage =
+          data.message ||
+          (typeof data.error === "string" ? data.error : data.error?.message) ||
+          `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       return data;

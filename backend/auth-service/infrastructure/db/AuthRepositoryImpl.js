@@ -21,6 +21,15 @@ class AuthRepositoryImpl extends AuthRepository {
     return rows.length ? new Auth(rows[0]) : null;
   }
 
+  /** userId로 인증 정보 삭제 */
+  async deleteByUserId(userId) {
+    const [result] = await this.pool.execute(
+      "DELETE FROM auth WHERE user_id = ?",
+      [userId],
+    );
+    return result.affectedRows > 0;
+  }
+
   /** 새 인증 정보 저장 */
   async save(auth) {
     const [result] = await this.pool.execute(

@@ -64,7 +64,7 @@ class UserController {
       }
       return res.status(200).json({
         success: true,
-        data: { id: user.user_id, email: user.email, name: user.name },
+        data: { id: user.user_id, email: user.email, name: user.name, status: user.status },
       });
     } catch (error) {
       next(error);

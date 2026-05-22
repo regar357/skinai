@@ -49,7 +49,16 @@ class UserRepositoryImpl extends UserRepository {
     });
   }
 
-  /** 상태 변경 - 탈퇴 시 status를 'inactive'로 */
+  /** 사용자 하드 삭제 */
+  async deleteById(userId) {
+    const [result] = await this.pool.execute(
+      "DELETE FROM users WHERE user_id = ?",
+      [userId],
+    );
+    return result.affectedRows > 0;
+  }
+
+  /** 상태 변경 (active ↔ suspended) */
   async updateStatus(userId, status) {
     const [result] = await this.pool.execute(
       "UPDATE users SET status = ?, updated_at = NOW() WHERE user_id = ?",

@@ -10,8 +10,9 @@
 const { Hospital, DomainError } = require("../domain/entities/Hospital");
 
 class HospitalService {
-  constructor(hospitalRepository) {
+  constructor(hospitalRepository, naverMapClient = null) {
     this.hospitalRepository = hospitalRepository;
+    this.naverMapClient = naverMapClient;
   }
 
   // ── 주변 병원 탐색 (lat, lng, sort, page, size) ──
@@ -50,16 +51,74 @@ class HospitalService {
     const hospitals = sorted.slice(offset, offset + size);
 
     return {
-      hospitals,
+      hospitals: hospitals.map((hospital) => this.toListItem(hospital)),
       pagination: { page, size, total, totalPages: Math.ceil(total / size) },
     };
+  }
+
+  async reverseGeocode({ latitude, longitude }) {
+    Hospital.validateCoordinates(latitude, longitude);
+
+    const location = await this.naverMapClient?.reverseGeocode(
+      latitude,
+      longitude,
+    );
+
+    return (
+      location || {
+        address: "현재 위치",
+        region1: "",
+        region2: "",
+        region3: "",
+        source: "fallback",
+      }
+    );
   }
 
   // ── 병원 상세 조회 ───────────────────────
   async getHospitalById(hospitalId) {
     const hospital = await this.hospitalRepository.findById(hospitalId);
     if (!hospital) throw new DomainError("병원 정보를 찾을 수 없습니다.", 404);
-    return hospital;
+    return this.toListItem(hospital);
+  }
+
+  toListItem(hospital) {
+    const latitude = Number(hospital.latitude);
+    const longitude = Number(hospital.longitude);
+    const distanceMeters = Number(hospital.distance || 0);
+
+    return {
+      id: hospital.hospital_id,
+      name: hospital.name,
+      address: hospital.address,
+      phone: hospital.phone,
+      hours: this.formatOpenHours(hospital.open_hours),
+      rating: Number(hospital.rating || 0),
+      distanceKm: Number((distanceMeters / 1000).toFixed(1)),
+      isOpen: true,
+      latitude,
+      longitude,
+      mapUrl: this.createNaverMapUrl(hospital),
+    };
+  }
+
+  formatOpenHours(openHours) {
+    if (!openHours) return "영업시간 정보 없음";
+    if (typeof openHours === "string") {
+      try {
+        const parsed = JSON.parse(openHours);
+        return parsed.label || parsed.weekday || openHours;
+      } catch {
+        return openHours;
+      }
+    }
+    return openHours.label || openHours.weekday || "영업시간 정보 없음";
+  }
+
+  createNaverMapUrl(hospital) {
+    return `https://map.naver.com/p/search/${encodeURIComponent(
+      `${hospital.name} ${hospital.address}`,
+    )}`;
   }
 }
 

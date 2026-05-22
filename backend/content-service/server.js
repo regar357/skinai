@@ -51,6 +51,10 @@ app.use(
   "/api/v1/encyclopedia",
   createEncyclopediaRoutes(contentController, authenticate, requireAdmin),
 );
+app.use(
+  "/api/v1/diseases",
+  createEncyclopediaRoutes(contentController, authenticate, requireAdmin),
+);
 
 app.use((err, req, res, next) => {
   console.error(

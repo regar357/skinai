@@ -3,9 +3,11 @@
  * User Application Service (응용 계층)
  * ═══════════════════════════════════════════════
  */
-const { User, DomainError } = require("../domain/entities/User");
+const { DomainError } = require("../domain/entities/User");
 
 const REQUIRED_CONFIRM_TEXT = "회원탈퇴";
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:3002";
+const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
 
 class UserService {
   constructor(userRepository) {
@@ -25,24 +27,22 @@ class UserService {
     };
   }
 
-  // ── 회원 탈퇴 (소프트 삭제) ──────────────
+  // ── 회원 탈퇴 (하드 삭제) ────────────────
   async deleteAccount(userId, confirmText) {
-    if (!confirmText) {
-      throw new DomainError("탈퇴 확인 문구를 입력해주세요.");
-    }
-    if (confirmText !== REQUIRED_CONFIRM_TEXT) {
-      throw new DomainError(
-        `탈퇴 확인 문구가 올바르지 않습니다. ('${REQUIRED_CONFIRM_TEXT}'을 입력해주세요)`,
-      );
-    }
+    if (!confirmText) throw new DomainError("탈퇴 확인 문구를 입력해주세요.");
+    if (confirmText !== REQUIRED_CONFIRM_TEXT)
+      throw new DomainError(`탈퇴 확인 문구가 올바르지 않습니다. ('${REQUIRED_CONFIRM_TEXT}'을 입력해주세요)`);
 
     const user = await this.userRepository.findById(userId);
-    if (!user) {
-      throw new DomainError("사용자 정보를 찾을 수 없습니다.", 404);
-    }
+    if (!user) throw new DomainError("사용자 정보를 찾을 수 없습니다.", 404);
 
-    user.deactivate();
-    await this.userRepository.updateStatus(userId, user.status);
+    await this.userRepository.deleteById(userId);
+    try {
+      await fetch(`${AUTH_SERVICE_URL}/internal/users/${userId}`, {
+        method: "DELETE",
+        headers: { "x-internal-token": INTERNAL_TOKEN },
+      });
+    } catch { /* auth 삭제 실패 시 무시 (best-effort) */ }
     return true;
   }
 

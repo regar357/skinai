@@ -15,6 +15,12 @@ const { Image } = require("../domain/entities/Image");
 const { ShareLink } = require("../domain/entities/ShareLink");
 const { DiagnosisLog } = require("../domain/entities/DiagnosisLog");
 const { v4: uuidv4 } = require("uuid");
+const aiClient = require("../infrastructure/ai/aiClient");
+const fs = require("fs");
+const path = require("path");
+
+const UPLOAD_DIR = path.join(__dirname, "../uploads");
+const SERVICE_URL = process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
 
 class DiagnosisService {
   constructor(diagnosisRepository) {
@@ -26,7 +32,7 @@ class DiagnosisService {
   // 진단 생성 + 이미지 저장 + AI 분석 요청
   // POST /api/v1/diagnoses
   // ─────────────────────────────────────────────
-  async createDiagnosis({ user_id, diagnosis_type, image_url }) {
+  async createDiagnosis({ user_id, diagnosis_type, image_url, file }) {
     const diagnosis = Diagnosis.createNew({
       user_id,
       diagnosis_type,
@@ -34,8 +40,88 @@ class DiagnosisService {
     });
     const saved = await this.diagnosisRepository.saveDiagnosis(diagnosis);
 
-    // 이미지 메타데이터 저장
-    if (image_url) {
+    let resultSummary = null;
+    let confidenceFraction = null;
+    let finalStatus = saved.status;
+
+    if (file) {
+      // 로컬 파일 저장 (개발 환경 S3 대체)
+      if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+      const ext = path.extname(file.originalname || "image.jpg") || ".jpg";
+      const filename = `${uuidv4()}${ext}`;
+      fs.writeFileSync(path.join(UPLOAD_DIR, filename), file.buffer);
+      const localUrl = `${SERVICE_URL}/uploads/${filename}`;
+
+      const image = new Image({
+        user_id,
+        diagnosis_id: saved.diagnosis_id,
+        original_url: localUrl,
+        file_size: file.size,
+        mime_type: file.mimetype,
+      });
+      await this.diagnosisRepository.saveImage(image);
+      await this.diagnosisRepository.updateDiagnosis(saved.diagnosis_id, { image_url: localUrl });
+
+      try {
+        const aiResponse = await aiClient.sendImage(
+          file.buffer,
+          file.mimetype,
+          file.originalname || "image.jpg",
+        );
+        const responseData = aiResponse?.data ?? aiResponse;
+        const success =
+          aiResponse?.success !== undefined ? aiResponse.success : true;
+        if (!success || !responseData) {
+          throw new Error(
+            `AI 응답이 유효하지 않습니다. body=${JSON.stringify(aiResponse)}`,
+          );
+        }
+
+        resultSummary =
+          responseData.diseaseName ||
+          responseData.disease_name ||
+          responseData.label ||
+          "unknown";
+        const rawConfidence = Number(
+          responseData.probability ?? responseData.confidence ?? 0,
+        );
+        confidenceFraction = Number.isFinite(rawConfidence)
+          ? rawConfidence <= 1
+            ? rawConfidence
+            : rawConfidence / 100
+          : null;
+
+        finalStatus = "completed";
+        await this.diagnosisRepository.updateDiagnosis(saved.diagnosis_id, {
+          status: finalStatus,
+          result_summary: resultSummary,
+          ai_confidence: confidenceFraction,
+        });
+
+        await this.diagnosisRepository.saveLog(
+          DiagnosisLog.create({
+            diagnosis_id: saved.diagnosis_id,
+            user_id,
+            action: "completed",
+            detail: `AI 결과: ${resultSummary} (${rawConfidence}%)`,
+          }),
+        );
+      } catch (err) {
+        console.error("AI 전송 실패:", err.message || err);
+        finalStatus = "failed";
+        await this.diagnosisRepository.updateDiagnosis(saved.diagnosis_id, {
+          status: finalStatus,
+        });
+        await this.diagnosisRepository.saveLog(
+          DiagnosisLog.create({
+            diagnosis_id: saved.diagnosis_id,
+            user_id,
+            action: "ai_error",
+            detail: err.message || String(err),
+          }),
+        );
+      }
+    } else if (image_url) {
       const image = new Image({
         user_id,
         diagnosis_id: saved.diagnosis_id,
@@ -54,7 +140,12 @@ class DiagnosisService {
       }),
     );
 
-    return saved;
+    return {
+      ...saved,
+      status: finalStatus,
+      result_summary: resultSummary || saved.result_summary,
+      ai_confidence: confidenceFraction ?? saved.ai_confidence,
+    };
   }
 
   // ─────────────────────────────────────────────

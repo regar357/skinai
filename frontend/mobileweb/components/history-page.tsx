@@ -7,12 +7,8 @@ import {
   X,
   Trash2,
   Check,
-  Download,
-  Share2,
   ChevronRight,
 } from "lucide-react"
-import { ShareModal } from "@/components/share-modal"
-import { generateDirectPDF, downloadPDF } from "@/utils/direct-pdf"
 import { diagnosisService } from "@/lib/api-services"
 
 const historyData = [
@@ -90,8 +86,6 @@ function getStatusConfig(score: number) {
 function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void }) {
   const [resolvedItem, setResolvedItem] = useState(item)
   const config = getStatusConfig(resolvedItem.score)
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-
   useEffect(() => {
     const loadDetail = async () => {
       try {
@@ -109,75 +103,10 @@ function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void
     void loadDetail()
   }, [item])
 
-  const saveToFile = () => {
-    const reportData = {
-      date: resolvedItem.date,
-      result: resolvedItem.result,
-      score: resolvedItem.score,
-      summary: `의심 질환: ${resolvedItem.result} (${resolvedItem.score}% 확률)`,
-      details: {
-        probability: resolvedItem.score
-      },
-      generatedAt: new Date().toISOString()
-    }
-    
-    // 직접 PDF 생성 및 다운로드
-    const pdfData = generateDirectPDF(reportData)
-    const filename = `skinai-report-${resolvedItem.date.replace(/\./g, '-')}.pdf`
-    const success = downloadPDF(pdfData, filename)
-    
-    if (success) {
-      showToast('PDF 파일 다운로드가 되었습니다.')
-    } else {
-      showToast('PDF 파일이 새 창에서 열렸습니다. 저장을 선택해주세요.')
-    }
-  }
-
-  // 토스트 메시지 함수
-  const showToast = (message: string) => {
-    // 기존 토스트가 있으면 제거
-    const existingToast = document.getElementById('toast-message')
-    if (existingToast) {
-      existingToast.remove()
-    }
-    
-    // 새 토스트 생성
-    const toast = document.createElement('div')
-    toast.id = 'toast-message'
-    toast.textContent = message
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 10000;
-      max-width: 300px;
-      text-align: center;
-    `
-    
-    document.body.appendChild(toast)
-    
-    // 3초 후 제거
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.parentNode.removeChild(toast)
-      }
-    }, 3000)
-  }
-
-  const shareToSNS = () => {
-    setIsShareModalOpen(true)
-  }
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative max-h-[90vh] w-full max-w-[450px] overflow-y-auto rounded-[28px] border border-white/40 bg-white/90 p-7 shadow-2xl backdrop-blur-xl">
+      <div className="relative w-fit max-w-[360px] overflow-y-auto rounded-[28px] border border-white/40 bg-white/90 p-7 shadow-2xl backdrop-blur-xl">
                 {/* Close button */}
         <button
           type="button"
@@ -191,8 +120,8 @@ function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void
         {/* Top Section */}
         <div className="mb">
           <div className="flex gap-4">
-            {/* Photo - 1.5x larger */}
-            <div className="relative h-36 w-36 overflow-hidden rounded-2xl shadow-lg flex-shrink-0">
+            {/* Photo */}
+            <div className="relative h-48 w-48 overflow-hidden rounded-2xl shadow-lg flex-shrink-0">
               <img src={resolvedItem.thumbnail} alt="" className="h-full w-full object-cover" crossOrigin="anonymous" />
             </div>
             
@@ -203,8 +132,8 @@ function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void
               
               {/* Probability circle below disease name */}
               <div className="mt-4 flex items-center gap-4">
-                <div className="relative flex h-24 w-24 items-center justify-center">
-                  <svg className="h-24 w-24 -rotate-90" viewBox="0 0 100 100">
+                <div className="relative flex h-28 w-28 items-center justify-center">
+                  <svg className="h-28 w-28 -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" strokeWidth="6" />
                     <circle
                       cx="50"
@@ -220,29 +149,9 @@ function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-lg font-extrabold text-foreground">{resolvedItem.score}%</span>
+                    <span className="text-xl font-extrabold text-foreground">{resolvedItem.score}%</span>
                     <span className="text-xs font-bold text-muted-foreground">확률</span>
                   </div>
-                </div>
-                
-                {/* Action buttons - icons only on the right */}
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={shareToSNS}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/80 text-slate-600 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-50"
-                    aria-label="공유"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveToFile}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white/80 text-slate-600 shadow-sm backdrop-blur-sm transition-all hover:bg-slate-50"
-                    aria-label="저장"
-                  >
-                    <Download className="h-5 w-5" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -251,16 +160,6 @@ function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void
 
 
         
-        {/* Share Modal */}
-        <ShareModal
-          isOpen={isShareModalOpen}
-          onClose={() => setIsShareModalOpen(false)}
-          shareData={{
-            title: 'SkinAI 피부 진단 결과',
-            text: `의심 질환: ${resolvedItem.result} (${resolvedItem.score}% 확률)\n날짜: ${resolvedItem.date}`,
-            url: window.location.href,
-          }}
-        />
       </div>
     </div>
   )

@@ -36,6 +36,19 @@ class AuthService {
     return { accessToken, refreshToken };
   }
 
+  // ── user-service에서 사용자 상태 조회 ───
+  async _getUserStatus(email) {
+    try {
+      const res = await fetch(
+        `${USER_SERVICE_URL}/api/v1/users/internal/by-email/${encodeURIComponent(email)}`,
+      );
+      const json = await res.json().catch(() => ({}));
+      return res.ok ? (json.data?.status ?? null) : null;
+    } catch {
+      return null;
+    }
+  }
+
   // ── user-service에 사용자 생성 요청 ─────
   async _createUserInUserService({ email, name }) {
     try {
@@ -78,8 +91,7 @@ class AuthService {
     const userInfo = await this._createUserInUserService({ email, name });
     const userId = userInfo.id;
 
-    // 이메일이 admin으로 시작하면 관리자
-    const role = email.startsWith("admin") ? "admin" : "user";
+    const role = "user";
 
     // 인증 정보 저장 (name도 캐시)
     const auth = new Auth({
@@ -122,6 +134,14 @@ class AuthService {
     if (!match)
       throw new DomainError("이메일 또는 비밀번호가 올바르지 않습니다.", 401);
 
+    if (auth.role === "user") {
+      const status = await this._getUserStatus(email);
+      if (status === "inactive")
+        throw new DomainError("탈퇴한 계정입니다.", 401);
+      if (status === "suspended")
+        throw new DomainError("정지된 계정입니다.", 401);
+    }
+
     const { accessToken, refreshToken } = this._issueTokens({
       userId: auth.user_id,
       email: auth.email,
@@ -132,7 +152,7 @@ class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: { id: auth.user_id, name: auth.name || "", email: auth.email },
+      user: { id: auth.user_id, name: auth.name || "", email: auth.email, role: auth.role },
     };
   }
 
@@ -141,6 +161,13 @@ class AuthService {
   // ─────────────────────────────────────────────
   async logout() {
     return true;
+  }
+
+  // ─────────────────────────────────────────────
+  // [내부] userId로 인증 정보 삭제
+  // ─────────────────────────────────────────────
+  async deleteByUserId(userId) {
+    return await this.authRepository.deleteByUserId(userId);
   }
 }
 

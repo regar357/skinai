@@ -13,7 +13,23 @@ import type {
   HospitalItem,
   Notice,
   PaginatedResponse,
+  ReverseGeocodeResult,
 } from "@/types/api";
+
+type ApiEnvelope<T> = {
+  success: boolean;
+  data: T;
+  pagination?: {
+    page?: number;
+    size?: number;
+    total?: number;
+    totalPages?: number;
+    currentPage?: number;
+    totalItems?: number;
+    hasNext?: boolean;
+    hasPrev?: boolean;
+  };
+};
 
 export const authService = {
   async login(payload: { email: string; password: string }) {
@@ -111,7 +127,7 @@ export const profileService = {
 
 export const noticeService = {
   getNotices(page = 1, size = 5) {
-    return apiRequest<PaginatedResponse<Notice>>(
+    return apiRequest<PaginatedResponse<Notice> & { total?: number }>(
       `/notices?page=${page}&size=${size}`,
     );
   },
@@ -151,17 +167,36 @@ export const feedbackService = {
   sendFeedback(payload: { rating: number; message: string }) {
     return apiRequest<void>("/feedback", {
       method: "POST",
-
       headers: { "Content-Type": "application/json" },
-
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ rating: payload.rating, content: payload.message }),
     });
   },
 
-  getMyFeedbacks(page = 1, size = 10) {
-    return apiRequest<PaginatedResponse<FeedbackItem>>(
-      `/feedback/my?page=${page}&size=${size}`,
-    );
+  async getMyFeedbacks(page = 1, size = 10): Promise<PaginatedResponse<FeedbackItem>> {
+    const raw = await apiRequest<any>(`/feedback/my?page=${page}&limit=${size}`);
+    const rows: any[] = raw.data ?? raw.items ?? [];
+    const pg = raw.pagination ?? {};
+    return {
+      items: rows.map((f) => ({
+        id: f.feedback_id ?? f.id,
+        userId: f.user_id ?? f.userId,
+        userName: f.user_name ?? "",
+        userEmail: f.user_email ?? "",
+        rating: f.rating,
+        message: f.content ?? f.message ?? "",
+        createdAt: f.created_at ?? f.createdAt ?? "",
+        status: f.reply_text ? "resolved" : "pending",
+        adminReply: f.reply_text ?? undefined,
+        adminReplyAt: f.replied_at ?? undefined,
+      })),
+      pagination: {
+        currentPage: pg.page ?? page,
+        totalPages: pg.totalPages ?? 1,
+        totalItems: pg.total ?? rows.length,
+        hasNext: (pg.page ?? page) < (pg.totalPages ?? 1),
+        hasPrev: (pg.page ?? page) > 1,
+      },
+    };
   },
 
   deleteMyFeedback(id: number) {
@@ -173,14 +208,14 @@ export const encyclopediaService = {
   getEntries(query = "", page = 1, size = 5) {
     const encoded = encodeURIComponent(query);
 
-    return apiRequest<PaginatedResponse<EncyclopediaItem>>(
+    return apiRequest<PaginatedResponse<EncyclopediaItem> & { total?: number }>(
       `/encyclopedia?query=${encoded}&page=${page}&size=${size}`,
     );
   },
 };
 
 export const hospitalService = {
-  getNearby(params: {
+  async getNearby(params: {
     lat: number;
     lng: number;
     sort?: "distance" | "rating";
@@ -189,8 +224,38 @@ export const hospitalService = {
   }) {
     const { lat, lng, sort = "distance", page = 1, size = 3 } = params;
 
-    return apiRequest<PaginatedResponse<HospitalItem>>(
+    const response = await apiRequest<
+      PaginatedResponse<HospitalItem> | ApiEnvelope<HospitalItem[]>
+    >(
       `/hospitals/nearby?lat=${lat}&lng=${lng}&sort=${sort}&page=${page}&size=${size}`,
     );
+
+    if ("items" in response) {
+      return response;
+    }
+
+    const totalItems = response.pagination?.total ?? response.data.length;
+    const totalPages =
+      response.pagination?.totalPages ?? Math.max(1, Math.ceil(totalItems / size));
+    const currentPage = response.pagination?.page ?? page;
+
+    return {
+      items: response.data,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalItems,
+        hasNext: currentPage < totalPages,
+        hasPrev: currentPage > 1,
+      },
+    };
+  },
+
+  async reverseGeocode(lat: number, lng: number) {
+    const response = await apiRequest<
+      ReverseGeocodeResult | ApiEnvelope<ReverseGeocodeResult>
+    >(`/hospitals/reverse-geocode?lat=${lat}&lng=${lng}`);
+
+    return "data" in response ? response.data : response;
   },
 };

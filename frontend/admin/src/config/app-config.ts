@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
   // API 연동 여부 설정 (true: API 사용, false: 목업 데이터 사용)
-  USE_API: process.env.NODE_ENV === 'production' || false,
+  USE_API: true,
   
   // 검색 관련 설정
   SEARCH: {

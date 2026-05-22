@@ -10,7 +10,6 @@ import {
   X,
   Send,
   Loader2,
-  CheckCircle2,
   Calendar,
   Trash2,
 } from "lucide-react"
@@ -137,7 +136,7 @@ export function ProfilePage({ user, onLogout, onProfileUpdate }: ProfilePageProp
 
       {/* Modals */}
       {activeModal === "feedback" && <FeedbackModal onClose={() => setActiveModal(null)} user={user} />}
-      {activeModal === "delete" && <DeleteAccountModal onClose={() => setActiveModal(null)} />}
+      {activeModal === "delete" && <DeleteAccountModal onClose={() => setActiveModal(null)} onLogout={onLogout} />}
       {activeModal === "notice" && <NoticeModal onClose={() => setActiveModal(null)} />}
     </div>
   )
@@ -509,10 +508,9 @@ function NoticeModal({ onClose }: { onClose: () => void }) {
     </ModalWrapper>
   )
 }
-function DeleteAccountModal({ onClose }: { onClose: () => void }) {
+function DeleteAccountModal({ onClose, onLogout }: { onClose: () => void; onLogout: () => void }) {
   const [confirmText, setConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
-  const [isDeleted, setIsDeleted] = useState(false)
 
   const handleDelete = async () => {
     if (confirmText !== "회원탈퇴") return
@@ -521,31 +519,11 @@ function DeleteAccountModal({ onClose }: { onClose: () => void }) {
       await profileService.deleteMyAccount(confirmText)
       await authService.logout()
     } catch {
-      // API 미연결 시에도 완료 UX를 유지한다.
+      // API 미연결 시에도 로그아웃 처리
     } finally {
       setIsDeleting(false)
-      setIsDeleted(true)
-      setTimeout(() => {
-        onClose()
-        // 실제로는 로그아웃 처리도 해야 함
-      }, 2000)
+      onLogout()
     }
-  }
-
-  if (isDeleted) {
-    return (
-      <ModalWrapper onClose={onClose} title="회원탈퇴 완료">
-        <div className="flex flex-col items-center gap-4 py-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/30">
-            <CheckCircle2 className="h-8 w-8 text-white" strokeWidth={1.8} />
-          </div>
-          <div className="text-center">
-            <p className="text-base font-bold text-foreground">회원탈퇴가 완료되었습니다</p>
-            <p className="mt-1 text-sm text-muted-foreground">그동안 이용해주셔서 감사합니다.</p>
-          </div>
-        </div>
-      </ModalWrapper>
-    )
   }
 
   return (
