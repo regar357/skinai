@@ -81,7 +81,8 @@ class HospitalService {
 
       const hospitals = await this.naverMapClient.searchLocalHospitals({
         address: searchAddress,
-        keyword: keyword || process.env.NAVER_HOSPITAL_SEARCH_KEYWORD || "피부과",
+        keyword:
+          keyword || process.env.NAVER_HOSPITAL_SEARCH_KEYWORD || "피부과",
         display: Number(process.env.NAVER_HOSPITAL_SEARCH_DISPLAY || 5),
       });
 
