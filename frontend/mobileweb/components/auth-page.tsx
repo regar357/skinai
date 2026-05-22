@@ -57,14 +57,14 @@ export function AuthPage({ onLogin }: AuthPageProps) {
     } catch (err) {
       console.log("[SkinAI] catch err:", err, "instanceof NetworkError:", err instanceof NetworkError);
       if (err instanceof NetworkError) {
-        // 백엔드 미연결 시 목업 처리
+        // 백엔드 미연결 시 목업 처리 (토큰 없음 → 인증 필요 기능은 제한됨)
         if (mode === "login") {
           console.log("[SkinAI] 목업 로그인입니다.");
           onLogin({
             name: form.name || "사용자",
             email: form.email || "user@skinai.com",
           });
-          setErrorMessage("백엔드 연결 전이라 목업 로그인으로 진입했습니다.");
+          setErrorMessage("백엔드 미연결 상태입니다. 일부 기능(진단, 기록 등)은 사용할 수 없습니다.");
         } else {
           console.log("[SkinAI] 목업 회원가입입니다.");
           setMode("login");

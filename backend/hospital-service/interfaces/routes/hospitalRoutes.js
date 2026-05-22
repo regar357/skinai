@@ -11,8 +11,8 @@ const express = require("express");
 const router = express.Router();
 
 module.exports = (ctrl, auth) => {
-  router.get("/reverse-geocode", auth, ctrl.reverseGeocode); // 현재 위치 좌표 → 주소 표시
-  router.get("/nearby", auth, ctrl.getNearby); // 주변 병원 탐색 (구 /search)
-  router.get("/:id", auth, ctrl.getById); // 병원 상세 조회
+  router.get("/reverse-geocode", ctrl.reverseGeocode); // 공개: 좌표 → 주소 변환
+  router.get("/nearby", ctrl.getNearby);               // 공개: 주변 병원 탐색
+  router.get("/:id", auth, ctrl.getById);              // 인증 필요: 병원 상세 조회
   return router;
 };
