@@ -17,6 +17,7 @@ class HospitalModel {
     rating,
     open_hours,
     specialties,
+    distance,
     created_at,
   }) {
     this.hospital_id = hospital_id || null;
@@ -28,6 +29,7 @@ class HospitalModel {
     this.rating = rating || null;
     this.open_hours = open_hours || null;
     this.specialties = specialties || null;
+    this.distance = distance ?? null;
     this.created_at = created_at || null;
   }
 }

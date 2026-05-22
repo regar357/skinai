@@ -15,7 +15,7 @@ class HospitalController {
   // ── 주변 병원 탐색 (구 search → nearby) ──
   getNearby = async (req, res, next) => {
     try {
-      const { lat, lng, sort, page, size, radius, keyword } = req.query;
+      const { lat, lng, sort, page, size, radius, keyword, address } = req.query;
       const result = await this.hospitalService.searchHospitals({
         latitude: parseFloat(lat),
         longitude: parseFloat(lng),
@@ -24,6 +24,7 @@ class HospitalController {
         size: parseInt(size) || 3,
         radius: parseInt(radius) || 5000,
         keyword,
+        address,
       });
       res.status(200).json({
         success: true,

@@ -83,6 +83,43 @@ async def get_system_status():
         }
     }
 
+# 6. [관리자용] AI 모니터링 - 성능 지표 조회 API (월별 추이 고정값)
+@app.get("/api/admin/monitoring/performance")
+async def get_performance_metrics():
+    return {
+        "status": 200,
+        "body": [
+            {
+                "accuracy": 0.995, 
+                "precision": 0.991, 
+                "recall": 0.992,    
+                "f1Score": 0.991,   
+                "evaluatedAt": "2026-05-16" # 5월 (학습 직후 최고 성능)
+            },
+            {
+                "accuracy": 0.982, 
+                "precision": 0.978, 
+                "recall": 0.980,    
+                "f1Score": 0.979,   
+                "evaluatedAt": "2026-06-16" # 6월 (살짝 하락)
+            },
+            {
+                "accuracy": 0.985, 
+                "precision": 0.982, 
+                "recall": 0.983,    
+                "f1Score": 0.982,   
+                "evaluatedAt": "2026-07-16" # 7월 (미세 조정 후 반등)
+            },
+            {
+                "accuracy": 0.989, 
+                "precision": 0.987, 
+                "recall": 0.988,    
+                "f1Score": 0.987,   
+                "evaluatedAt": "2026-08-16" # 8월 (안정화)
+            }
+        ]
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
