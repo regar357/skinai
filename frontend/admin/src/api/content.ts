@@ -1,37 +1,37 @@
 import { apiClient } from '../api-client';
-import { Disease, Notice, Hospital, ApiResponse, PaginatedResponse } from '../types';
+import { Article, Notice, Hospital, ApiResponse, PaginatedResponse } from '../types';
 
 export const contentApi = {
   // 피부 백과 관련
   diseases: {
     // 피부 백과 목록 조회
-    getAll: (page = 1, limit = 10): Promise<ApiResponse<PaginatedResponse<Disease>>> => {
-      return apiClient.get<PaginatedResponse<Disease>>(`/diseases?page=${page}&limit=${limit}`);
+    getAll: (page = 1, limit = 10, query = ''): Promise<ApiResponse<PaginatedResponse<Article>>> => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (query) params.set('query', query);
+      return apiClient.get<PaginatedResponse<Article>>(`/diseases?${params.toString()}`);
     },
 
     // 백과 상세 조회
-    getById: (diseaseId: number): Promise<ApiResponse<Disease>> => {
-      return apiClient.get<Disease>(`/diseases/${diseaseId}`);
+    getById: (diseaseId: number): Promise<ApiResponse<Article>> => {
+      return apiClient.get<Article>(`/diseases/${diseaseId}`);
     },
 
-    // 백과 상세 조회 (Admin용)
-    getDetailById: (diseaseId: number): Promise<ApiResponse<Disease>> => {
-      return apiClient.get<Disease>(`/admin/diseases/${diseaseId}`);
+    // 백과 생성 (Admin 기능) - description → content 필드 변환
+    create: (data: { title: string; description: string }): Promise<ApiResponse<Article>> => {
+      return apiClient.post<Article>('/diseases', { title: data.title, content: data.description });
     },
 
-    // 백과 생성 (Admin 기능)
-    create: (data: { title: string; description: string }): Promise<ApiResponse<Disease>> => {
-      return apiClient.post<Disease>('/admin/diseases', data);
-    },
-
-    // 백과 수정 (Admin 기능)
-    update: (diseaseId: number, data: Partial<Disease>): Promise<ApiResponse<Disease>> => {
-      return apiClient.put<Disease>(`/admin/diseases/${diseaseId}`, data);
+    // 백과 수정 (Admin 기능) - description → content 필드 변환
+    update: (diseaseId: number, data: { title?: string; description?: string }): Promise<ApiResponse<null>> => {
+      const body: Record<string, string> = {};
+      if (data.title !== undefined) body.title = data.title;
+      if (data.description !== undefined) body.content = data.description;
+      return apiClient.put<null>(`/diseases/${diseaseId}`, body);
     },
 
     // 백과 삭제 (Admin 기능)
     delete: (diseaseId: number): Promise<ApiResponse<null>> => {
-      return apiClient.delete<null>(`/admin/diseases/${diseaseId}`);
+      return apiClient.delete<null>(`/diseases/${diseaseId}`);
     },
   },
 

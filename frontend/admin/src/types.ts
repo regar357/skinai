@@ -61,6 +61,18 @@ export interface Disease {
   modifiedDate: string;
 }
 
+export interface Article {
+  article_id?: number;
+  id?: number;
+  title: string;
+  content: string;
+  category?: string;
+  image_url?: string;
+  view_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Notice {
   notice_id: number;
   title: string;
