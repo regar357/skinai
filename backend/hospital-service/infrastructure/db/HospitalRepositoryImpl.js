@@ -49,6 +49,11 @@ class HospitalRepositoryImpl extends HospitalRepository {
   }
 
   async save(hospital) {
+    const openHours =
+      hospital.open_hours === undefined || hospital.open_hours === null
+        ? null
+        : JSON.stringify(hospital.open_hours);
+
     const [result] = await this.pool.execute(
       "INSERT INTO hospitals (name, address, phone, latitude, longitude, rating, open_hours, specialties, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
       [
@@ -58,12 +63,68 @@ class HospitalRepositoryImpl extends HospitalRepository {
         hospital.latitude,
         hospital.longitude,
         hospital.rating,
-        JSON.stringify(hospital.open_hours),
+        openHours,
         hospital.specialties,
       ],
     );
     hospital.hospital_id = result.insertId;
     return hospital;
+  }
+
+  async findByNameAndAddress(name, address) {
+    const [rows] = await this.pool.execute(
+      "SELECT * FROM hospitals WHERE name = ? AND address = ? LIMIT 1",
+      [name, address],
+    );
+    return rows.length ? new Hospital(rows[0]) : null;
+  }
+
+  async upsert(hospital) {
+    const existing = await this.findByNameAndAddress(
+      hospital.name,
+      hospital.address,
+    );
+
+    if (!existing) {
+      return this.save(hospital);
+    }
+
+    const openHours =
+      hospital.open_hours === undefined || hospital.open_hours === null
+        ? null
+        : JSON.stringify(hospital.open_hours);
+
+    await this.pool.execute(
+      `
+        UPDATE hospitals
+        SET phone = COALESCE(?, phone),
+            latitude = ?,
+            longitude = ?,
+            rating = COALESCE(?, rating),
+            open_hours = COALESCE(?, open_hours),
+            specialties = COALESCE(?, specialties)
+        WHERE hospital_id = ?
+      `,
+      [
+        hospital.phone || null,
+        hospital.latitude,
+        hospital.longitude,
+        hospital.rating || null,
+        openHours,
+        hospital.specialties || null,
+        existing.hospital_id,
+      ],
+    );
+
+    return this.findById(existing.hospital_id);
+  }
+
+  async upsertMany(hospitals) {
+    const saved = [];
+    for (const hospital of hospitals) {
+      saved.push(await this.upsert(hospital));
+    }
+    return saved;
   }
 }
 

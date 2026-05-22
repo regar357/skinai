@@ -59,6 +59,13 @@ function getMapUrl(hospital: HospitalCard, origin: LocationPoint) {
   )
 }
 
+function getHospitalInfoUrl(hospital: HospitalCard) {
+  return (
+    hospital.mapUrl ||
+    `https://map.naver.com/p/search/${encodeURIComponent(hospital.name)}`
+  )
+}
+
 export function HospitalFinderPage() {
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance")
   const [currentPage, setCurrentPage] = useState(1)
@@ -79,7 +86,6 @@ export function HospitalFinderPage() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         }
-        setCurrentLocation(nextLocation)
 
         try {
           const result = await hospitalService.reverseGeocode(
@@ -89,6 +95,8 @@ export function HospitalFinderPage() {
           if (result.address) setLocationLabel(result.address)
         } catch {
           setLocationLabel("현재 위치")
+        } finally {
+          setCurrentLocation(nextLocation)
         }
       },
       () => {
@@ -110,6 +118,7 @@ export function HospitalFinderPage() {
           sort: sortBy,
           page: currentPage,
           size: itemsPerPage,
+          address: locationLabel,
         })
         const mapped = response.items.map((item) => ({
           id: item.id,
@@ -137,7 +146,7 @@ export function HospitalFinderPage() {
     }
 
     void loadHospitals()
-  }, [sortBy, currentPage, currentLocation])
+  }, [sortBy, currentPage, currentLocation, locationLabel])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage))
 
@@ -265,18 +274,24 @@ export function HospitalFinderPage() {
             {/* Action buttons */}
             <div className="mt-4 flex gap-2">
               <a
-                href={getPhoneHref(hospital.phone)}
-                onClick={(event) => handlePhoneClick(event, hospital.phone)}
-                aria-label={`${hospital.name} 전화하기`}
+                href={hospital.phone ? getPhoneHref(hospital.phone) : getHospitalInfoUrl(hospital)}
+                onClick={
+                  hospital.phone
+                    ? (event) => handlePhoneClick(event, hospital.phone)
+                    : undefined
+                }
+                aria-label={
+                  hospital.phone
+                    ? `${hospital.name} 전화하기`
+                    : `${hospital.name} 전화번호 확인하기`
+                }
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg active:scale-[0.98]"
               >
                 <Phone className="h-3.5 w-3.5" />
-                전화하기
+                {hospital.phone ? "전화하기" : "전화번호 확인"}
               </a>
               <a
                 href={getMapUrl(hospital, currentLocation)}
-                target="_blank"
-                rel="noopener noreferrer"
                 aria-label={`${hospital.name} 길찾기`}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98]"
               >
