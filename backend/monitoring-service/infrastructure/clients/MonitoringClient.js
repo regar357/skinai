@@ -30,6 +30,10 @@ class MonitoringClient {
     return this.get(`${this.diagnosisUrl}/internal/monitoring/performance`);
   }
 
+  getAiPerformance() {
+    return this.get(`${this.aiUrl}/api/admin/monitoring/performance`);
+  }
+
   getDiseaseAccuracy() {
     return this.get(
       `${this.diagnosisUrl}/internal/monitoring/disease-accuracy`,

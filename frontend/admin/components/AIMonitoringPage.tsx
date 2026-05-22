@@ -128,26 +128,30 @@ export function AIMonitoringPage() {
   useEffect(() => {
     const fetchMonitoringData = async () => {
       setLoading(true);
-      try {
-        // API 연동 시도
-        const [performanceRes, diseaseRes, systemRes, modelRes] = await Promise.all([
-          monitoringApi.getPerformanceMetrics(),
-          monitoringApi.getDiseaseAccuracy(),
-          monitoringApi.getSystemStatus(),
-          monitoringApi.getModelInfo()
-        ]);
-        
-        setPerformanceData(performanceRes.data ?? mockPerformanceData);
-        setDiseaseAccuracyData(diseaseRes.data ?? mockDiseaseAccuracyData);
-        setSystemStatus(systemRes.data ?? mockSystemStatus);
-        setModelInfo(modelRes.data ?? null);
-      } catch (error) {
-        // API 연동 실패 시 - 프론트 테스트 모드로 동작
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작");
-        // 이미 mock 데이터로 설정되어 있으므로 그대로 사용
-      } finally {
-        setLoading(false);
+
+      const [performanceRes, diseaseRes, systemRes, modelRes] = await Promise.allSettled([
+        monitoringApi.getPerformanceMetrics(),
+        monitoringApi.getDiseaseAccuracy(),
+        monitoringApi.getSystemStatus(),
+        monitoringApi.getModelInfo(),
+      ]);
+
+      if (performanceRes.status === "fulfilled") {
+        const data = performanceRes.value.data;
+        if (Array.isArray(data) && data.length > 0) setPerformanceData(data);
       }
+      if (diseaseRes.status === "fulfilled") {
+        const data = diseaseRes.value.data;
+        if (Array.isArray(data) && data.length > 0) setDiseaseAccuracyData(data);
+      }
+      if (systemRes.status === "fulfilled" && systemRes.value.data) {
+        setSystemStatus(systemRes.value.data);
+      }
+      if (modelRes.status === "fulfilled" && modelRes.value.data) {
+        setModelInfo(modelRes.value.data);
+      }
+
+      setLoading(false);
     };
 
     fetchMonitoringData();
