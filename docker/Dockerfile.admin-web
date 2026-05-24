@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 의존성 먼저 설치
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
+
+# 소스 복사
+COPY . .
+
+EXPOSE 3000
+
+# Next dev 서버 - 0.0.0.0 바인딩 필수
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]

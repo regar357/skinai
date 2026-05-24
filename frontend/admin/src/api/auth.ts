@@ -14,7 +14,7 @@ export const authApi = {
 
   // 관리자 로그인
   adminLogin: (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
-    return apiClient.post<LoginResponse>('/admin/login', data);
+    return apiClient.post<LoginResponse>('/auth/login', data);
   },
 
   // 로그아웃

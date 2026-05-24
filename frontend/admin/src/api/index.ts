@@ -4,7 +4,6 @@
 export { authApi } from './auth';
 export { imagesApi } from './images';
 export { analysisApi } from './analysis';
-export { sharesApi } from './shares';
 export { feedbacksApi } from './feedbacks';
 export { contentApi } from './content';
 export { adminApi } from './admin';

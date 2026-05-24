@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import React, { useState } from "react"
 import { Search, Plus, Download, Calendar } from "lucide-react"
 import {
   Table,
@@ -21,7 +22,10 @@ import {
 } from "@/components/ui/select"
 import { searchService, MockUser } from "@/src/services/search-service"
 import { usersApi } from "@/src/api/users"
+import { searchService, MockUser } from "@/src/services/search-service"
+import { usersApi } from "@/src/api/users"
 
+function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
 function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
   if (status === "활성") {
     return (
@@ -30,6 +34,16 @@ function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
       </span>
     )
   }
+  if (status === "정지") {
+    return (
+      <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700">
+        정지
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-700">
+      삭제
   if (status === "정지") {
     return (
       <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700">
@@ -90,26 +104,20 @@ export function UsersPage() {
 
   const handleSuspend = async (userId: number) => {
     try {
-      // API 연동 시도
       await usersApi.suspend(userId)
-      alert("사용자가 정지되었습니다.")
-      // 실제 구현에서는 데이터 다시 로드
+      handleSearch(currentPage)
     } catch (error) {
-      // API 연동 실패 시 프론트 테스트
-      console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+      console.warn("API 연동 실패 - 테스트 모드")
       alert(`사용자 ID ${userId}를 정지합니다. (테스트 모드)`)
     }
   }
 
   const handleUnsuspend = async (userId: number) => {
     try {
-      // API 연동 시도
       await usersApi.unsuspend(userId)
-      alert("사용자 정지가 해제되었습니다.")
-      // 실제 구현에서는 데이터 다시 로드
+      handleSearch(currentPage)
     } catch (error) {
-      // API 연동 실패 시 프론트 테스트
-      console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+      console.warn("API 연동 실패 - 테스트 모드")
       alert(`사용자 ID ${userId}의 정지를 해제합니다. (테스트 모드)`)
     }
   }
@@ -121,14 +129,11 @@ export function UsersPage() {
   const handleDeleteConfirm = async () => {
     if (deleteConfirmUserId) {
       try {
-        // API 연동 시도
         await usersApi.delete(deleteConfirmUserId)
-        alert("사용자가 삭제되었습니다.")
         setDeleteConfirmUserId(null)
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(1)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`사용자 ID ${deleteConfirmUserId}를 삭제합니다. (테스트 모드)`)
         setDeleteConfirmUserId(null)
       }
@@ -143,6 +148,7 @@ export function UsersPage() {
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex items-center gap-3">
+        {/* 사용자 추가 및 내보내기 버튼 제거됨 */}
         {/* 사용자 추가 및 내보내기 버튼 제거됨 */}
       </div>
 
@@ -186,6 +192,7 @@ export function UsersPage() {
           </TableHeader>
           <TableBody>
             {users.map((user: MockUser) => (
+            {users.map((user: MockUser) => (
               <TableRow key={user.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                 <TableCell className="px-5 py-4 text-sm font-medium text-blue-600">{user.id}</TableCell>
                 <TableCell className="px-5 py-4 text-sm text-gray-800 font-medium">{user.username}</TableCell>
@@ -201,9 +208,13 @@ export function UsersPage() {
                     <span className="flex gap-3">
                       <button className="text-orange-500 hover:text-orange-600 font-medium" onClick={() => handleSuspend(user.id)}>정지</button>
                       <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
+                      <button className="text-orange-500 hover:text-orange-600 font-medium" onClick={() => handleSuspend(user.id)}>정지</button>
+                      <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                     </span>
                   ) : (
                     <span className="flex gap-3">
+                      <button className="text-blue-500 hover:text-blue-600 font-medium" onClick={() => handleUnsuspend(user.id)}>해제</button>
+                      <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                       <button className="text-blue-500 hover:text-blue-600 font-medium" onClick={() => handleUnsuspend(user.id)}>해제</button>
                       <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                     </span>
@@ -213,6 +224,7 @@ export function UsersPage() {
             ))}
           </TableBody>
         </Table>
+        {users.length === 0 && (
         {users.length === 0 && (
           <div className="py-16 text-center text-sm text-gray-400">
             검색 결과가 없습니다.
@@ -258,7 +270,74 @@ export function UsersPage() {
             </div>
           </div>
         )}
+
+        {/* 페이징 */}
+        {pagination.total > 0 && (
+          <div className="flex items-center justify-between px-2 py-4">
+            <div className="text-sm text-gray-700">
+              총 {pagination.total}개 중 {((currentPage - 1) * pagination.pageSize) + 1}-{Math.min(currentPage * pagination.pageSize, pagination.total)}개 표시
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              
+              {Array.from({ length: Math.ceil(pagination.total / pagination.pageSize) }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 text-sm border rounded-md ${
+                    currentPage === page
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === Math.ceil(pagination.total / pagination.pageSize)}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {deleteConfirmUserId && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">사용자 삭제</h3>
+            <p className="text-gray-600 mb-6">
+              정말로 이 사용자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleDeleteCancel}
+                variant="outline"
+                className="px-4 py-2"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleDeleteConfirm}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2"
+              >
+                삭제
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 삭제 확인 모달 */}
       {deleteConfirmUserId && (

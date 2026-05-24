@@ -7,7 +7,19 @@
  * - 비즈니스 규칙 없음 (검증/동작 메서드는 User 엔티티에 위치)
  */
 class UserModel {
-  constructor({ user_id, email, password, name, phone, birth_date, gender, status, last_login_at, created_at, updated_at }) {
+  constructor({
+    user_id,
+    email,
+    password,
+    name,
+    phone,
+    birth_date,
+    gender,
+    status,
+    last_login_at,
+    created_at,
+    updated_at,
+  }) {
     this.user_id = user_id || null;
     this.email = email;
     this.password = password;

@@ -1,7 +1,7 @@
 // API Response Types based on api-spec.md
 
 // DB 명세에 따른 사용자 상태 타입
-export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED';
+export type UserStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
 
 export interface User {
   user_id: number;
@@ -15,11 +15,23 @@ export interface AIAnalysisResult {
   analysis_id: number;
   image_id: number;
   user_id: number;
-  result_status: 'NORMAL' | 'ABNORMAL';
+  result_status: "NORMAL" | "ABNORMAL";
   suspected_disease: string;
   confidence_score: number;
   guide_text: string;
   created_at: string;
+}
+
+// 검사기록 탭에 맞는 타입
+export interface ExamRecord {
+  id: number;
+  username: string;
+  userId: string;
+  examDate: string;
+  examType: string;
+  result: string;
+  confidence: number;
+  imageId: string;
 }
 
 // 검사기록 탭에 맞는 타입
@@ -43,30 +55,38 @@ export interface Image {
   created_at: string;
 }
 
-export interface Share {
-  share_id: number;
-  analysis_id: number;
-  share_token: string;
-  expires_at: string;
-  created_at: string;
-}
-
 export interface Feedback {
   feedback_id: number;
   user_id: number;
   analysis_id: number;
   content: string;
   rating: number;
-  status: 'pending' | 'answered';
+  status: "pending" | "answered";
+  status: "pending" | "answered";
   created_at: string;
+  admin_reply?: string;
   admin_reply?: string;
 }
 
 export interface Disease {
   id: number;
   title: string;
+  id: number;
+  title: string;
   description: string;
   modifiedDate: string;
+}
+
+export interface Article {
+  article_id?: number;
+  id?: number;
+  title: string;
+  content: string;
+  category?: string;
+  image_url?: string;
+  view_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Notice {
@@ -108,10 +128,6 @@ export interface SignupRequest {
 
 export interface AnalysisRequest {
   image_id: number;
-}
-
-export interface ShareRequest {
-  analysis_id: number;
 }
 
 export interface FeedbackRequest {

@@ -1,45 +1,74 @@
-import { apiClient } from '../api-client';
-import { Disease, Notice, Hospital, ApiResponse, PaginatedResponse } from '../types';
+import { apiClient } from "../api-client";
+import {
+  Article,
+  Notice,
+  Hospital,
+  ApiResponse,
+  PaginatedResponse,
+} from "../types";
 
 export const contentApi = {
   // 피부 백과 관련
   diseases: {
     // 피부 백과 목록 조회
-    getAll: (page = 1, limit = 10): Promise<ApiResponse<PaginatedResponse<Disease>>> => {
-      return apiClient.get<PaginatedResponse<Disease>>(`/diseases?page=${page}&limit=${limit}`);
+    getAll: (
+      page = 1,
+      limit = 10,
+      query = "",
+    ): Promise<ApiResponse<PaginatedResponse<Article>>> => {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (query) params.set("query", query);
+      return apiClient.get<PaginatedResponse<Article>>(
+        `/diseases?${params.toString()}`,
+      );
     },
 
     // 백과 상세 조회
-    getById: (diseaseId: number): Promise<ApiResponse<Disease>> => {
-      return apiClient.get<Disease>(`/diseases/${diseaseId}`);
+    getById: (diseaseId: number): Promise<ApiResponse<Article>> => {
+      return apiClient.get<Article>(`/diseases/${diseaseId}`);
     },
 
-    // 백과 상세 조회 (Admin용)
-    getDetailById: (diseaseId: number): Promise<ApiResponse<Disease>> => {
-      return apiClient.get<Disease>(`/admin/diseases/${diseaseId}`);
+    // 백과 생성 (Admin 기능) - description → content 필드 변환
+    create: (data: {
+      title: string;
+      description: string;
+    }): Promise<ApiResponse<Article>> => {
+      return apiClient.post<Article>("/diseases", {
+        title: data.title,
+        content: data.description,
+      });
     },
 
-    // 백과 생성 (Admin 기능)
-    create: (data: { title: string; description: string }): Promise<ApiResponse<Disease>> => {
-      return apiClient.post<Disease>('/admin/diseases', data);
-    },
-
-    // 백과 수정 (Admin 기능)
-    update: (diseaseId: number, data: Partial<Disease>): Promise<ApiResponse<Disease>> => {
-      return apiClient.put<Disease>(`/admin/diseases/${diseaseId}`, data);
+    // 백과 수정 (Admin 기능) - description → content 필드 변환
+    update: (
+      diseaseId: number,
+      data: { title?: string; description?: string },
+    ): Promise<ApiResponse<null>> => {
+      const body: Record<string, string> = {};
+      if (data.title !== undefined) body.title = data.title;
+      if (data.description !== undefined) body.content = data.description;
+      return apiClient.put<null>(`/diseases/${diseaseId}`, body);
     },
 
     // 백과 삭제 (Admin 기능)
     delete: (diseaseId: number): Promise<ApiResponse<null>> => {
-      return apiClient.delete<null>(`/admin/diseases/${diseaseId}`);
+      return apiClient.delete<null>(`/diseases/${diseaseId}`);
     },
   },
 
   // 공지사항 관련
   notices: {
     // 공지사항 목록 조회
-    getAll: (page = 1, limit = 10): Promise<ApiResponse<PaginatedResponse<Notice>>> => {
-      return apiClient.get<PaginatedResponse<Notice>>(`/notices?page=${page}&limit=${limit}`);
+    getAll: (
+      page = 1,
+      limit = 10,
+    ): Promise<ApiResponse<PaginatedResponse<Notice>>> => {
+      return apiClient.get<PaginatedResponse<Notice>>(
+        `/notices?page=${page}&limit=${limit}`,
+      );
     },
 
     // 공지사항 상세 조회
@@ -48,12 +77,17 @@ export const contentApi = {
     },
 
     // 공지사항 생성 (Admin 기능)
-    create: (data: Omit<Notice, 'notice_id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Notice>> => {
-      return apiClient.post<Notice>('/admin/notices', data);
+    create: (
+      data: Omit<Notice, "notice_id" | "created_at" | "updated_at">,
+    ): Promise<ApiResponse<Notice>> => {
+      return apiClient.post<Notice>("/admin/notices", data);
     },
 
     // 공지사항 수정 (Admin 기능)
-    update: (noticeId: number, data: Partial<Notice>): Promise<ApiResponse<Notice>> => {
+    update: (
+      noticeId: number,
+      data: Partial<Notice>,
+    ): Promise<ApiResponse<Notice>> => {
       return apiClient.put<Notice>(`/admin/notices/${noticeId}`, data);
     },
 
@@ -64,7 +98,7 @@ export const contentApi = {
 
     // 활성 공지사항만 조회
     getActive: (): Promise<ApiResponse<Notice[]>> => {
-      return apiClient.get<Notice[]>('/notices/active');
+      return apiClient.get<Notice[]>("/notices/active");
     },
   },
 
@@ -78,10 +112,14 @@ export const contentApi = {
       department?: string;
     }): Promise<ApiResponse<Hospital[]>> => {
       const searchParams = new URLSearchParams();
-      if (params.latitude) searchParams.append('latitude', params.latitude.toString());
-      if (params.longitude) searchParams.append('longitude', params.longitude.toString());
-      if (params.radius) searchParams.append('radius', params.radius.toString());
-      if (params.department) searchParams.append('department', params.department);
+      if (params.latitude)
+        searchParams.append("latitude", params.latitude.toString());
+      if (params.longitude)
+        searchParams.append("longitude", params.longitude.toString());
+      if (params.radius)
+        searchParams.append("radius", params.radius.toString());
+      if (params.department)
+        searchParams.append("department", params.department);
 
       return apiClient.get<Hospital[]>(`/hospitals?${searchParams.toString()}`);
     },
@@ -92,12 +130,17 @@ export const contentApi = {
     },
 
     // 병원 정보 등록 (Admin 기능)
-    create: (data: Omit<Hospital, 'hospital_id'>): Promise<ApiResponse<Hospital>> => {
-      return apiClient.post<Hospital>('/hospitals', data);
+    create: (
+      data: Omit<Hospital, "hospital_id">,
+    ): Promise<ApiResponse<Hospital>> => {
+      return apiClient.post<Hospital>("/hospitals", data);
     },
 
     // 병원 정보 수정 (Admin 기능)
-    update: (hospitalId: number, data: Partial<Hospital>): Promise<ApiResponse<Hospital>> => {
+    update: (
+      hospitalId: number,
+      data: Partial<Hospital>,
+    ): Promise<ApiResponse<Hospital>> => {
       return apiClient.put<Hospital>(`/hospitals/${hospitalId}`, data);
     },
 

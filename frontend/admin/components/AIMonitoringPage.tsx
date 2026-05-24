@@ -45,20 +45,21 @@ const mockDiseaseAccuracyData = [
   { name: "지루성 각화증", value: 85.9 },
 ];
 
-
 // Mock data for fallback
 const mockSystemStatus = {
   averageResponseTime: 2300,
   dailyRequests: 15234,
   errorRate: 0.8,
-  uptime: 99.9
+  uptime: 99.9,
 };
 
 // Dynamic summary cards based on system status
 const getSummaryCards = (status: any) => [
   {
     title: "평균 응답시간",
-    value: status ? `${(status.averageResponseTime / 1000).toFixed(1)}초` : "2.3초",
+    value: status
+      ? `${(status.averageResponseTime / 1000).toFixed(1)}초`
+      : "2.3초",
     change: status ? "+0.2초" : "+0.2초",
     trend: "up" as const,
     icon: Clock,
@@ -107,11 +108,14 @@ const mockModelInfo = [
 // Dynamic model info based on API response
 const getModelInfo = (info: any) => {
   if (!info) return mockModelInfo;
-  
+
   return [
     { label: "모델 버전", value: info.modelVersion || "EfficientNet-B4 v2.1" },
     { label: "마지막 학습일", value: info.lastTrained || "2024-07-15" },
-    { label: "학습 데이터셋", value: info.dataset || "ISIC 2024 (15,234 이미지)" },
+    {
+      label: "학습 데이터셋",
+      value: info.dataset || "ISIC 2024 (15,234 이미지)",
+    },
     { label: "모델 아키텍처", value: info.architecture || "EfficientNet-B4" },
     { label: "입력 크기", value: info.inputSize || "380x380 RGB" },
     { label: "분류 클래스", value: info.classes || "7개 질환 클래스" },
@@ -120,7 +124,9 @@ const getModelInfo = (info: any) => {
 
 export function AIMonitoringPage() {
   const [performanceData, setPerformanceData] = useState(mockPerformanceData);
-  const [diseaseAccuracyData, setDiseaseAccuracyData] = useState(mockDiseaseAccuracyData);
+  const [diseaseAccuracyData, setDiseaseAccuracyData] = useState(
+    mockDiseaseAccuracyData,
+  );
   const [systemStatus, setSystemStatus] = useState(null);
   const [modelInfo, setModelInfo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -128,26 +134,32 @@ export function AIMonitoringPage() {
   useEffect(() => {
     const fetchMonitoringData = async () => {
       setLoading(true);
-      try {
-        // API 연동 시도
-        const [performanceRes, diseaseRes, systemRes, modelRes] = await Promise.all([
+
+      const [performanceRes, diseaseRes, systemRes, modelRes] =
+        await Promise.allSettled([
           monitoringApi.getPerformanceMetrics(),
           monitoringApi.getDiseaseAccuracy(),
           monitoringApi.getSystemStatus(),
-          monitoringApi.getModelInfo()
+          monitoringApi.getModelInfo(),
         ]);
-        
-        setPerformanceData(performanceRes.data);
-        setDiseaseAccuracyData(diseaseRes.data);
-        setSystemStatus(systemRes.data);
-        setModelInfo(modelRes.data);
-      } catch (error) {
-        // API 연동 실패 시 - 프론트 테스트 모드로 동작
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작");
-        // 이미 mock 데이터로 설정되어 있으므로 그대로 사용
-      } finally {
-        setLoading(false);
+
+      if (performanceRes.status === "fulfilled") {
+        const data = performanceRes.value.data;
+        if (Array.isArray(data) && data.length > 0) setPerformanceData(data);
       }
+      if (diseaseRes.status === "fulfilled") {
+        const data = diseaseRes.value.data;
+        if (Array.isArray(data) && data.length > 0)
+          setDiseaseAccuracyData(data);
+      }
+      if (systemRes.status === "fulfilled" && systemRes.value.data) {
+        setSystemStatus(systemRes.value.data);
+      }
+      if (modelRes.status === "fulfilled" && modelRes.value.data) {
+        setModelInfo(modelRes.value.data);
+      }
+
+      setLoading(false);
     };
 
     fetchMonitoringData();
@@ -167,8 +179,12 @@ export function AIMonitoringPage() {
                     <Icon className={`w-5 h-5 text-${card.color}-500`} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-700 mb-0.5">{card.title}</p>
-                    <p className="text-lg font-bold text-gray-900">{card.value}</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-0.5">
+                      {card.title}
+                    </p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {card.value}
+                    </p>
                   </div>
                   <div className="flex items-center text-xs">
                     {card.trend === "up" && (
@@ -182,8 +198,8 @@ export function AIMonitoringPage() {
                         card.trend === "up"
                           ? "text-green-500 font-semibold"
                           : card.trend === "down"
-                          ? "text-red-500 font-semibold"
-                          : "text-gray-500 font-semibold"
+                            ? "text-red-500 font-semibold"
+                            : "text-gray-500 font-semibold"
                       }
                     >
                       {card.change}
@@ -219,15 +235,16 @@ export function AIMonitoringPage() {
                   labelStyle={{ color: "#374151", fontWeight: 600 }}
                   formatter={(value, name) => [
                     `${value}%`,
-                    name === "정확도" ? "정확도" :
-                    name === "정밀도" ? "정밀도" :
-                    name === "재현율" ? "재현율" : "F1점수"
+                    name === "정확도"
+                      ? "정확도"
+                      : name === "정밀도"
+                        ? "정밀도"
+                        : name === "재현율"
+                          ? "재현율"
+                          : "F1점수",
                   ]}
                 />
-                <Legend 
-                  wrapperStyle={{ paddingTop: "15px" }}
-                  iconType="line"
-                />
+                <Legend wrapperStyle={{ paddingTop: "15px" }} iconType="line" />
                 <Line
                   type="monotone"
                   dataKey="정확도"
@@ -276,32 +293,29 @@ export function AIMonitoringPage() {
               질환별 탐지 정확도
             </h3>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart 
-                data={[
-                  { disease: "기저세포암", 정확도: 96.5 },
-                  { disease: "편평세포암", 정확도: 94.2 },
-                  { disease: "흑색종", 정확도: 91.8 },
-                  { disease: "양성 종양", 정확도: 88.2 },
-                  { disease: "광선 각화증", 정확도: 89.7 },
-                  { disease: "지루성 각화증", 정확도: 85.9 }
-                ]}
+              <BarChart
+                data={diseaseAccuracyData}
                 layout="vertical"
                 margin={{ top: 20, right: 30, bottom: 20, left: 40 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  horizontal={true}
+                  vertical={false}
+                />
                 <XAxis type="number" domain={[0, 100]} hide />
-                <YAxis 
-                  dataKey="disease" 
-                  type="category" 
+                <YAxis
+                  dataKey="name"
+                  type="category"
                   width={100}
                   tick={{ fontSize: 12 }}
                 />
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, '정확도']}
-                  cursor={{ fill: 'transparent' }}
+                <Tooltip
+                  formatter={(value) => [`${value}%`, "정확도"]}
+                  cursor={{ fill: "transparent" }}
                 />
-                <Bar 
-                  dataKey="정확도" 
+                <Bar
+                  dataKey="value"
                   fill="#3b82f6"
                   radius={[0, 4, 4, 0]}
                   barSize={20}
@@ -321,8 +335,13 @@ export function AIMonitoringPage() {
           </h3>
           <div className="grid grid-cols-3 gap-3">
             {getModelInfo(modelInfo).map((info, index) => (
-              <div key={index} className="flex justify-between items-center p-1.5 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600 font-medium">{info.label}</span>
+              <div
+                key={index}
+                className="flex justify-between items-center p-1.5 bg-gray-50 rounded-lg"
+              >
+                <span className="text-sm text-gray-600 font-medium">
+                  {info.label}
+                </span>
                 <span className="text-sm font-semibold text-gray-900">
                   {info.value}
                 </span>

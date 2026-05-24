@@ -88,18 +88,15 @@ export function NoticePage() {
   const handleEditSubmit = async () => {
     if (editingNotice && editingNotice.title.trim() && editingNotice.content.trim()) {
       try {
-        // API 연동 시도
         await contentApi.notices.update(editingNotice.notice_id, {
           title: editingNotice.title,
           content: editingNotice.content
         })
-        alert(`공지사항 "${editingNotice.title}"이 수정되었습니다.`)
         setShowEditModal(false)
         setEditingNotice(null)
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(currentPage)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`공지사항 "${editingNotice.title}"이 수정되었습니다. (테스트 모드)`)
         setShowEditModal(false)
         setEditingNotice(null)
@@ -119,14 +116,11 @@ export function NoticePage() {
   const handleDeleteConfirm = async () => {
     if (deleteConfirmId) {
       try {
-        // API 연동 시도
         await contentApi.notices.delete(deleteConfirmId)
-        alert(`공지사항 ID ${deleteConfirmId}가 삭제되었습니다.`)
         setDeleteConfirmId(null)
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(1)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`공지사항 ID ${deleteConfirmId}가 삭제되었습니다. (테스트 모드)`)
         setDeleteConfirmId(null)
       }
@@ -145,19 +139,16 @@ export function NoticePage() {
   const handleAddSubmit = async () => {
     if (newNotice.title.trim() && newNotice.content.trim()) {
       try {
-        // API 연동 시도
         await contentApi.notices.create({
           title: newNotice.title,
           content: newNotice.content,
           is_active: true
         })
-        alert(`공지사항 "${newNotice.title}"이 추가되었습니다.`)
         setShowAddModal(false)
         setNewNotice({ title: "", content: "" })
-        // 실제 구현에서는 데이터 다시 로드
+        handleSearch(1)
       } catch (error) {
-        // API 연동 실패 시 프론트 테스트
-        console.log("API 연동 실패 - 프론트 테스트 모드로 동작")
+        console.warn("API 연동 실패 - 테스트 모드")
         alert(`공지사항 "${newNotice.title}"이 추가되었습니다. (테스트 모드)`)
         setShowAddModal(false)
         setNewNotice({ title: "", content: "" })

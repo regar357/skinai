@@ -129,38 +129,12 @@ class MockDataProvider {
     { id: 1000, username: "김민준", userId: "U001", examDate: "2024-07-21", examType: "피부 종양 검사", result: "기저세포암 의심", confidence: 85, imageId: "IMG001" },
     { id: 1001, username: "이서연", userId: "U002", examDate: "2024-07-20", examType: "흑색종 검사", result: "정상 소견", confidence: 95, imageId: "IMG002" },
     { id: 1002, username: "박지호", userId: "U003", examDate: "2024-07-19", examType: "피부 종양 검사", result: "편평세포암 가능성", confidence: 72, imageId: "IMG003" },
-    { id: 1003, username: "최수빈", userId: "U004", examDate: "2024-07-18", examType: "반복 검사", result: "치료 후 호전", confidence: 88, imageId: "IMG004" },
-    { id: 1004, username: "정현우", userId: "U005", examDate: "2024-07-17", examType: "피부 종양 검사", result: "양성 종양", confidence: 91, imageId: "IMG005" },
-    { id: 1005, username: "한소희", userId: "U006", examDate: "2024-07-17", examType: "흑색종 검사", result: "정상 소견", confidence: 97, imageId: "IMG006" },
-    { id: 1006, username: "오준혁", userId: "U007", examDate: "2024-07-16", examType: "피부 종양 검사", result: "기저세포암 의심", confidence: 78, imageId: "IMG007" },
-    { id: 1007, username: "윤아름", userId: "U008", examDate: "2024-07-15", examType: "반복 검사", result: "경과 관찰 필요", confidence: 65, imageId: "IMG008" },
-    { id: 1008, username: "임채원", userId: "U009", examDate: "2024-07-14", examType: "피부 종양 검사", result: "정상 소견", confidence: 92, imageId: "IMG009" },
-    { id: 1009, username: "강태양", userId: "U010", examDate: "2024-07-13", examType: "흑색종 검사", result: "흑색종 의심", confidence: 68, imageId: "IMG010" },
-    { id: 1010, username: "백하은", userId: "U011", examDate: "2024-07-12", examType: "피부 종양 검사", result: "양성 종양", confidence: 83, imageId: "IMG011" },
-    { id: 1011, username: "신동현", userId: "U012", examDate: "2024-07-11", examType: "반복 검사", result: "치료 후 호전", confidence: 90, imageId: "IMG012" },
-    { id: 1012, username: "조미래", userId: "U013", examDate: "2024-07-10", examType: "피부 종양 검사", result: "편평세포암 가능성", confidence: 76, imageId: "IMG013" },
-    { id: 1013, username: "문지우", userId: "U014", examDate: "2024-07-09", examType: "흑색종 검사", result: "정상 소견", confidence: 96, imageId: "IMG014" },
-    { id: 1014, username: "류세진", userId: "U015", examDate: "2024-07-08", examType: "피부 종양 검사", result: "기저세포암 의심", confidence: 81, imageId: "IMG015" },
-    { id: 1015, username: "김민준", userId: "U001", examDate: "2024-07-07", examType: "반복 검사", result: "치료 반응 양호", confidence: 93, imageId: "IMG016" },
-    { id: 1016, username: "이서연", userId: "U002", examDate: "2024-07-05", examType: "피부 종양 검사", result: "정상 소견", confidence: 98, imageId: "IMG017" },
-    { id: 1017, username: "박지호", userId: "U003", examDate: "2024-07-03", examType: "흑색종 검사", result: "경과 관찰 필요", confidence: 70, imageId: "IMG018" },
   ];
 
-  static getUsers(): MockUser[] {
-    return this.users;
-  }
-
-  static getNotices(): MockNotice[] {
-    return this.notices;
-  }
-
-  static getEncyclopedia(): MockEncyclopediaEntry[] {
-    return this.encyclopedia;
-  }
-
-  static getRecords(): MockExamRecord[] {
-    return this.records;
-  }
+  static getUsers(): MockUser[] { return this.users; }
+  static getNotices(): MockNotice[] { return this.notices; }
+  static getEncyclopedia(): MockEncyclopediaEntry[] { return this.encyclopedia; }
+  static getRecords(): MockExamRecord[] { return this.records; }
 }
 
 // 검색 서비스 클래스
@@ -175,34 +149,31 @@ class SearchService {
   async searchUsers(params: SearchParams): Promise<SearchResult<MockUser>> {
     if (this.useApi) {
       try {
-        const response = await usersApi.getAll(
+        const statusMap: Record<string, string> = { '활성': 'active', '정지': 'suspended' };
+        const apiStatus = statusMap[params.filters?.status || ''] || '';
+        const res = await usersApi.getAll(
           params.page || 1,
           params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE,
-          params.filters?.status || ''
-        );
-        
-        // API 응답을 SearchResult 형식으로 변환
-        return {
-          data: response.data.data.map(user => ({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            status: user.status === 'ACTIVE' ? '활성' : user.status === 'SUSPENDED' ? '정지' : '삭제',
-            joinDate: user.joinDate,
-            lastLogin: user.lastLogin,
-            analysisCount: user.analysisCount
-          })),
-          total: response.data.pagination.total,
-          page: response.data.pagination.page,
-          pageSize: response.data.pagination.limit
-        };
+          apiStatus
+        ) as any;
+
+        const items = (res.data?.data || res.data || []).map((u: any) => ({
+          id: u.user_id,
+          username: u.name,
+          email: u.email,
+          status: u.status === 'active' ? '활성' : u.status === 'suspended' ? '정지' : '삭제' as any,
+          joinDate: u.created_at || '',
+          lastLogin: u.last_login_at || '',
+          analysisCount: 0,
+        }));
+        const pg = res.data?.pagination || res.pagination || {};
+        return { data: items, total: pg.total || 0, page: pg.page || 1, pageSize: pg.limit || 10 };
       } catch (error) {
         console.warn('API 연동 실패, 목업 데이터로 전환:', error);
         return this.searchUsersMock(params);
       }
-    } else {
-      return this.searchUsersMock(params);
     }
+    return this.searchUsersMock(params);
   }
 
   // 목업 사용자 검색
@@ -212,197 +183,136 @@ class SearchService {
     const statusFilter = params.filters?.status || 'all';
 
     const filtered = users.filter(user => {
-      const matchesSearch = !query || 
+      const matchesSearch = !query ||
         user.username.toLowerCase().includes(query) ||
         user.email.toLowerCase().includes(query);
-      
       const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-      
       return matchesSearch && matchesStatus;
     });
 
     const page = params.page || 1;
     const pageSize = params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE;
     const startIndex = (page - 1) * pageSize;
-    const paginatedData = filtered.slice(startIndex, startIndex + pageSize);
-
-    return {
-      data: paginatedData,
-      total: filtered.length,
-      page,
-      pageSize
-    };
+    return { data: filtered.slice(startIndex, startIndex + pageSize), total: filtered.length, page, pageSize };
   }
 
   // 공지사항 검색
   async searchNotices(params: SearchParams): Promise<SearchResult<MockNotice>> {
     if (this.useApi) {
       try {
-        const response = await contentApi.notices.getAll(
+        const res = await contentApi.notices.getAll(
           params.page || 1,
           params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE
-        );
-        
-        return {
-          data: response.data.data,
-          total: response.data.pagination.total,
-          page: response.data.pagination.page,
-          pageSize: response.data.pagination.limit
-        };
+        ) as any;
+
+        const items = (res.data || []).map((n: any) => ({
+          notice_id: n.notice_id || n.id,
+          title: n.title,
+          content: n.content,
+          created_at: n.created_at || n.createdAt || '',
+          updated_at: n.updated_at || '',
+          is_active: n.is_active !== false,
+        }));
+        const pg = res.pagination || {};
+        return { data: items, total: pg.total || res.total || items.length, page: pg.page || 1, pageSize: pg.limit || 10 };
       } catch (error) {
         console.warn('API 연동 실패, 목업 데이터로 전환:', error);
         return this.searchNoticesMock(params);
       }
-    } else {
-      return this.searchNoticesMock(params);
     }
+    return this.searchNoticesMock(params);
   }
 
   // 목업 공지사항 검색
   private searchNoticesMock(params: SearchParams): SearchResult<MockNotice> {
     const notices = MockDataProvider.getNotices();
     const query = params.query.toLowerCase();
-
-    const filtered = notices.filter(notice => {
-      return !query || 
-        notice.title.toLowerCase().includes(query) ||
-        notice.content.toLowerCase().includes(query);
-    });
-
+    const filtered = notices.filter(n => !query || n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query));
     const page = params.page || 1;
     const pageSize = params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE;
     const startIndex = (page - 1) * pageSize;
-    const paginatedData = filtered.slice(startIndex, startIndex + pageSize);
-
-    return {
-      data: paginatedData,
-      total: filtered.length,
-      page,
-      pageSize
-    };
+    return { data: filtered.slice(startIndex, startIndex + pageSize), total: filtered.length, page, pageSize };
   }
 
   // 백과사전 검색
   async searchEncyclopedia(params: SearchParams): Promise<SearchResult<MockEncyclopediaEntry>> {
     if (this.useApi) {
       try {
-        const response = await contentApi.diseases.getAll(
+        const res = await contentApi.diseases.getAll(
           params.page || 1,
           params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE
-        );
-        
-        return {
-          data: response.data.data.map(disease => ({
-            id: disease.id,
-            title: disease.title,
-            description: disease.description,
-            modifiedDate: disease.modifiedDate
-          })),
-          total: response.data.pagination.total,
-          page: response.data.pagination.page,
-          pageSize: response.data.pagination.limit
-        };
+        ) as any;
+
+        const items = (res.data || []).map((a: any) => ({
+          id: a.article_id || a.id,
+          title: a.title,
+          description: a.content || a.description || '',
+          modifiedDate: a.updated_at || a.created_at || '',
+        }));
+        const pg = res.pagination || {};
+        return { data: items, total: pg.total || res.total || items.length, page: pg.page || 1, pageSize: pg.limit || 10 };
       } catch (error) {
         console.warn('API 연동 실패, 목업 데이터로 전환:', error);
         return this.searchEncyclopediaMock(params);
       }
-    } else {
-      return this.searchEncyclopediaMock(params);
     }
+    return this.searchEncyclopediaMock(params);
   }
 
   // 목업 백과사전 검색
   private searchEncyclopediaMock(params: SearchParams): SearchResult<MockEncyclopediaEntry> {
     const encyclopedia = MockDataProvider.getEncyclopedia();
     const query = params.query.toLowerCase();
-
-    const filtered = encyclopedia.filter(entry => {
-      return !query || 
-        entry.title.toLowerCase().includes(query) ||
-        entry.description.toLowerCase().includes(query);
-    });
-
+    const filtered = encyclopedia.filter(e => !query || e.title.toLowerCase().includes(query) || e.description.toLowerCase().includes(query));
     const page = params.page || 1;
     const pageSize = params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE;
     const startIndex = (page - 1) * pageSize;
-    const paginatedData = filtered.slice(startIndex, startIndex + pageSize);
-
-    return {
-      data: paginatedData,
-      total: filtered.length,
-      page,
-      pageSize
-    };
+    return { data: filtered.slice(startIndex, startIndex + pageSize), total: filtered.length, page, pageSize };
   }
 
   // 검사기록 검색
   async searchRecords(params: SearchParams): Promise<SearchResult<MockExamRecord>> {
     if (this.useApi) {
       try {
-        const response = await analysisApi.getExamRecords(
+        const res = await analysisApi.getExamRecords(
           params.page || 1,
           params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE,
           params.query
-        );
-        
-        return {
-          data: response.data.data.map(record => ({
-            id: record.id,
-            username: record.username,
-            userId: record.userId,
-            examDate: record.examDate,
-            examType: record.examType,
-            result: record.result,
-            confidence: record.confidence,
-            imageId: record.imageId
-          })),
-          total: response.data.pagination.total,
-          page: response.data.pagination.page,
-          pageSize: response.data.pagination.limit
-        };
+        ) as any;
+
+        const items = (res.data?.data || res.data || []).map((r: any) => ({
+          id: r.diagnosis_id || r.id,
+          username: r.user_name || `User #${r.user_id}`,
+          userId: String(r.user_id || ''),
+          examDate: r.created_at || '',
+          examType: r.diagnosis_type || '',
+          result: r.result_summary || r.status || '',
+          confidence: Number(r.ai_confidence) || 0,
+          imageId: String(r.diagnosis_id || r.id || ''),
+        }));
+        const pg = res.data?.pagination || res.pagination || {};
+        return { data: items, total: pg.total || 0, page: pg.page || 1, pageSize: pg.limit || 10 };
       } catch (error) {
         console.warn('API 연동 실패, 목업 데이터로 전환:', error);
         return this.searchRecordsMock(params);
       }
-    } else {
-      return this.searchRecordsMock(params);
     }
+    return this.searchRecordsMock(params);
   }
 
   // 목업 검사기록 검색
   private searchRecordsMock(params: SearchParams): SearchResult<MockExamRecord> {
     const records = MockDataProvider.getRecords();
     const query = params.query.toLowerCase();
-
-    const filtered = records.filter(record => {
-      return !query || 
-        record.username.toLowerCase().includes(query) ||
-        record.userId.toLowerCase().includes(query) ||
-        record.result.toLowerCase().includes(query);
-    });
-
+    const filtered = records.filter(r => !query || r.username.toLowerCase().includes(query) || r.userId.toLowerCase().includes(query) || r.result.toLowerCase().includes(query));
     const page = params.page || 1;
     const pageSize = params.pageSize || APP_CONFIG.SEARCH.PAGE_SIZE;
     const startIndex = (page - 1) * pageSize;
-    const paginatedData = filtered.slice(startIndex, startIndex + pageSize);
-
-    return {
-      data: paginatedData,
-      total: filtered.length,
-      page,
-      pageSize
-    };
+    return { data: filtered.slice(startIndex, startIndex + pageSize), total: filtered.length, page, pageSize };
   }
 
-  // API/목업 전환 메서드
-  setUseApi(useApi: boolean): void {
-    this.useApi = useApi;
-  }
-
-  // 현재 모드 확인
-  isUsingApi(): boolean {
-    return this.useApi;
-  }
+  setUseApi(useApi: boolean): void { this.useApi = useApi; }
+  isUsingApi(): boolean { return this.useApi; }
 }
 
 // 싱글톤 인스턴스

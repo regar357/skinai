@@ -1,0 +1,266 @@
+# ═══════════════════════════════════════════════════════════════════
+# SkinAI - AWS 프로덕션 docker-compose
+# EC2(Ubuntu) + RDS(MySQL 8.0) + S3
+# ═══════════════════════════════════════════════════════════════════
+#
+# 사전 작업:
+#   1. cp .env.prod.example .env.prod  →  값 입력
+#   2. bash scripts/init-rds.sh        →  RDS 스키마 최초 1회 초기화
+#
+# 실행:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# 접속:
+#   - 모바일 웹  : http://<EC2_PUBLIC_IP>
+#   - 관리자 웹  : http://<EC2_PUBLIC_IP>:3010
+#   - API        : http://<EC2_PUBLIC_IP>/api/v1
+
+x-jwt-env: &jwt-env
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+  JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-14d}
+
+x-db-env: &db-env
+  DB_HOST: ${DB_HOST}
+  DB_PORT: ${DB_PORT:-3306}
+  DB_USER: ${DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD}
+
+x-aws-env: &aws-env
+  AWS_REGION: ${AWS_REGION}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+
+services:
+  # ────────────────────────────────────────────
+  # Nginx - 리버스 프록시
+  # 포트 80   → mobileweb + /api/v1 + /ai
+  # 포트 3010 → admin-web  + /api/v1
+  # ────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: skinai-nginx
+    ports:
+      - "80:80"
+      - "3010:3010"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - mobileweb
+      - admin-web
+      - api-gateway
+      - ai
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # API Gateway (내부 3001)
+  # ────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-api-gateway
+    environment:
+      <<: *jwt-env
+      NODE_ENV: production
+      PORT: 3001
+      AUTH_SERVICE_URL: http://auth-service:3002
+      USER_SERVICE_URL: http://user-service:3003
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+      CONTENT_SERVICE_URL: http://content-service:3005
+      HOSPITAL_SERVICE_URL: http://hospital-service:3006
+      FEEDBACK_SERVICE_URL: http://feedback-service:3007
+      ADMIN_SERVICE_URL: http://admin-service:3008
+      MONITORING_SERVICE_URL: http://monitoring-service:3009
+      AI_SERVICE_URL: http://ai:8001
+    depends_on:
+      - auth-service
+      - user-service
+      - diagnosis-service
+      - content-service
+      - hospital-service
+      - feedback-service
+      - admin-service
+      - monitoring-service
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 1. 인증 서비스 (내부 3002)
+  # ────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-auth
+    environment:
+      <<: [*jwt-env, *db-env]
+      NODE_ENV: production
+      PORT: 3002
+      AUTH_DB_NAME: skinai_auth
+      USER_SERVICE_URL: http://user-service:3003
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 2. 사용자 서비스 (내부 3003)
+  # ────────────────────────────────────────────
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-user
+    environment:
+      <<: [*jwt-env, *db-env, *aws-env]
+      NODE_ENV: production
+      PORT: 3003
+      USER_DB_NAME: skinai_user
+      AUTH_SERVICE_URL: http://auth-service:3002
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 3. 분석 서비스 (내부 3004)
+  # ────────────────────────────────────────────
+  diagnosis-service:
+    build:
+      context: ./backend/diagnosis-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-diagnosis
+    environment:
+      <<: [*jwt-env, *db-env, *aws-env]
+      NODE_ENV: production
+      PORT: 3004
+      DIAGNOSIS_DB_NAME: skinai_diagnosis
+      AI_SERVICE_URL: http://ai:8001
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 4. 콘텐츠 서비스 (내부 3005)
+  # ────────────────────────────────────────────
+  content-service:
+    build:
+      context: ./backend/content-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-content
+    environment:
+      <<: [*jwt-env, *db-env, *aws-env]
+      NODE_ENV: production
+      PORT: 3005
+      CONTENT_DB_NAME: skinai_content
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 5. 병원 탐색 서비스 (내부 3006)
+  # ────────────────────────────────────────────
+  hospital-service:
+    build:
+      context: ./backend/hospital-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-hospital
+    environment:
+      <<: [*jwt-env, *db-env]
+      NODE_ENV: production
+      PORT: 3006
+      HOSPITAL_DB_NAME: skinai_hospital
+      NAVER_MAP_CLIENT_ID: ${NAVER_MAP_CLIENT_ID}
+      NAVER_MAP_CLIENT_SECRET: ${NAVER_MAP_CLIENT_SECRET}
+      NAVER_SEARCH_CLIENT_ID: ${NAVER_SEARCH_CLIENT_ID}
+      NAVER_SEARCH_CLIENT_SECRET: ${NAVER_SEARCH_CLIENT_SECRET}
+      NAVER_HOSPITAL_SEARCH_KEYWORD: ${NAVER_HOSPITAL_SEARCH_KEYWORD:-피부과}
+      NAVER_HOSPITAL_SEARCH_DISPLAY: ${NAVER_HOSPITAL_SEARCH_DISPLAY:-5}
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 6. 피드백 서비스 (내부 3007)
+  # ────────────────────────────────────────────
+  feedback-service:
+    build:
+      context: ./backend/feedback-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-feedback
+    environment:
+      <<: [*jwt-env, *db-env]
+      NODE_ENV: production
+      PORT: 3007
+      FEEDBACK_DB_NAME: skinai_feedback
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 7. 관리자 서비스 (내부 3008)
+  # ────────────────────────────────────────────
+  admin-service:
+    build:
+      context: ./backend/admin-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-admin
+    environment:
+      <<: [*jwt-env, *db-env]
+      NODE_ENV: production
+      PORT: 3008
+      ADMIN_DB_NAME: skinai_admin
+      AUTH_SERVICE_URL: http://auth-service:3002
+      USER_SERVICE_URL: http://user-service:3003
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+      CONTENT_SERVICE_URL: http://content-service:3005
+      FEEDBACK_SERVICE_URL: http://feedback-service:3007
+      MONITORING_SERVICE_URL: http://monitoring-service:3009
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 8. 모니터링 서비스 (내부 3009)
+  # ────────────────────────────────────────────
+  monitoring-service:
+    build:
+      context: ./backend/monitoring-service
+      dockerfile: ../../docker/Dockerfile.backend
+    container_name: skinai-monitoring
+    environment:
+      <<: [*jwt-env, *db-env]
+      NODE_ENV: production
+      PORT: 3009
+      MONITORING_DB_NAME: skinai_monitoring
+      DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
+      USER_SERVICE_URL: http://user-service:3003
+      AI_SERVICE_URL: http://ai:8001
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # AI 진단 서버 (내부 8001)
+  # ────────────────────────────────────────────
+  ai:
+    build:
+      context: ./ai
+      dockerfile: ../docker/Dockerfile.ai
+    container_name: skinai-ai
+    environment:
+      <<: *aws-env
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 모바일 프론트엔드 (내부 3000)
+  # 상대경로 사용 → EC2 IP가 바뀌어도 재빌드 불필요
+  # ────────────────────────────────────────────
+  mobileweb:
+    build:
+      context: ./frontend/mobileweb
+      dockerfile: ../../docker/Dockerfile.mobileweb.prod
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api/v1
+    container_name: skinai-mobileweb
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────
+  # 관리자 프론트엔드 (내부 3000 → nginx :3010)
+  # ────────────────────────────────────────────
+  admin-web:
+    build:
+      context: ./frontend/admin
+      dockerfile: ../../docker/Dockerfile.admin-web.prod
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api/v1
+    container_name: skinai-admin-web
+    depends_on:
+      - api-gateway
+    restart: unless-stopped

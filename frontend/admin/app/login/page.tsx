@@ -1,52 +1,53 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Shield, User } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, Shield, User } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { isAuthenticated, isInitialized, login } = useAuth();
+
+  useEffect(() => {
+    if (isInitialized && isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, isInitialized, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
 
-    try {
-      // API 연동 전 개발용 - 무조건 로그인 성공
-      if (email && password) {
-        // Store authentication token in localStorage
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userNickname", "관리자")
-        router.push("/")
-      } else {
-        setError("이메일과 비밀번호를 입력해주세요")
-      }
-    } catch (err) {
-      // API 연동 실패 시에도 개발용으로 로그인 처리
-      if (email && password) {
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        localStorage.setItem("userNickname", "관리자")
-        router.push("/")
-      } else {
-        setError("이메일과 비밀번호를 입력해주세요")
-      }
-    } finally {
-      setIsLoading(false)
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setError("이메일과 비밀번호를 입력해주세요");
+      return;
     }
-  }
+
+    setIsLoading(true);
+    const isLoginSuccessful = await login(trimmedEmail, trimmedPassword);
+    setIsLoading(false);
+
+    if (!isLoginSuccessful) {
+      setError("관리자 계정 정보가 올바르지 않습니다");
+      return;
+    }
+
+    router.replace("/");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -58,9 +59,7 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-bold text-gray-900">
             SkinAI Admin
           </CardTitle>
-          <p className="text-gray-600 mt-2">
-            Admin Dashboard Login
-          </p>
+          <p className="text-gray-600 mt-2">Admin Dashboard Login</p>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && (
@@ -70,10 +69,13 @@ export default function LoginPage() {
               </AlertDescription>
             </Alert>
           )}
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
+
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
                 이메일
               </Label>
               <div className="relative">
@@ -91,7 +93,10 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
                 비밀번호
               </Label>
               <div className="relative">
@@ -110,7 +115,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -126,5 +135,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

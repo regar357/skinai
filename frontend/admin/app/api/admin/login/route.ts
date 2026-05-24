@@ -1,53 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { User, LoginRequest, LoginResponse, ApiResponse } from '@/src/types';
+import { LoginRequest, LoginResponse, ApiResponse } from '@/src/types';
 
-// 관리자 계정
-const adminUsers: User[] = [
-  {
-    user_id: 1,
-    email: 'admin@example.com',
-    nickname: 'admin',
-    status: 'ACTIVE',
-    created_at: new Date().toISOString(),
-  }
-];
-
-// 임시 토큰 생성 함수
-function generateToken(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-}
+const API_BASE_URL = process.env.API_BASE_URL || 'http://api-gateway:3001/api/v1';
 
 export async function POST(request: NextRequest) {
   try {
     const body: LoginRequest = await request.json();
 
-    // 관리자 인증
-    const adminUser = adminUsers.find(u => u.email === body.email);
-    if (!adminUser || adminUser.status !== 'ACTIVE') {
+    // 실제 백엔드 API 호출 (관리자 권한 체크는 auth-service에서)
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid admin credentials'
-      } as ApiResponse<null>, { status: 401 });
+        error: data.error?.message || '로그인 실패'
+      } as ApiResponse<null>, { status: response.status });
     }
 
-    // 토큰 생성
-    const accessToken = generateToken();
-    const refreshToken = generateToken();
+    // 관리자 권한 체크
+    if (!data.data?.user?.email?.startsWith('admin')) {
+      return NextResponse.json({
+        success: false,
+        error: '관리자 권한이 없습니다'
+      } as ApiResponse<null>, { status: 403 });
+    }
 
     return NextResponse.json({
       success: true,
-      data: {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        user: adminUser
-      } as LoginResponse,
+      data: data.data,
       message: 'Admin login successful'
     } as ApiResponse<LoginResponse>);
 
   } catch (error) {
+    console.error('Admin login error:', error);
     return NextResponse.json({
       success: false,
-      error: 'Internal server error'
+      error: '서버 연결 오류'
     } as ApiResponse<null>, { status: 500 });
   }
 }

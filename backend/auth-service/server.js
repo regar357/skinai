@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════
  * Auth Service - 진입점 (Composition Root)
  * ═══════════════════════════════════════════════
- * 
+ *
  * 포트: 3002
  * 기능: 서비스 가입신청, 로그인/로그아웃
  */
@@ -27,15 +27,38 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({ status: "UP", service: "auth-service", timestamp: new Date().toISOString() });
+  res.json({
+    status: "UP",
+    service: "auth-service",
+    timestamp: new Date().toISOString(),
+  });
 });
 app.use("/api/v1/auth", createAuthRoutes(authController, authenticate));
 
+const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
+app.delete("/internal/users/:userId", (req, res, next) => {
+  if (req.headers["x-internal-token"] !== INTERNAL_TOKEN)
+    return res.status(403).json({ success: false, message: "Forbidden" });
+  next();
+}, async (req, res, next) => {
+  try {
+    await authService.deleteByUserId(req.params.userId);
+    res.json({ success: true });
+  } catch (e) { next(e); }
+});
+
 app.use((err, req, res, next) => {
   console.error(`[auth-service] ${req.method} ${req.originalUrl}`, err.message);
-  res.status(err.statusCode || 500).json({ success: false, message: err.statusCode ? err.message : "서버 내부 오류" });
+  res
+    .status(err.statusCode || 500)
+    .json({
+      success: false,
+      message: err.statusCode ? err.message : "서버 내부 오류",
+    });
 });
-app.use((req, res) => res.status(404).json({ success: false, message: "Not Found" }));
+app.use((req, res) =>
+  res.status(404).json({ success: false, message: "Not Found" }),
+);
 
 app.listen(port, () => console.log(`[auth-service] running on port ${port}`));
 module.exports = app;

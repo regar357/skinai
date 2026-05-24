@@ -6,7 +6,8 @@
  */
 class DiagnosisClient {
   constructor(baseUrl) {
-    this.baseUrl = baseUrl || process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
+    this.baseUrl =
+      baseUrl || process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
   }
 
   /**
@@ -15,11 +16,14 @@ class DiagnosisClient {
    */
   async verifyDiagnosis(diagnosisId, userId, token) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/diagnoses/${diagnosisId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/diagnoses/${diagnosisId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         if (response.status === 404) return { exists: false, owned: false };
@@ -32,7 +36,10 @@ class DiagnosisClient {
         owned: data.data.user_id === userId,
       };
     } catch (error) {
-      console.warn("[feedback-service] Diagnosis service unavailable, using local fallback:", error.message);
+      console.warn(
+        "[feedback-service] Diagnosis service unavailable, using local fallback:",
+        error.message,
+      );
       return await this.localFallback(diagnosisId, userId);
     }
   }
@@ -46,7 +53,7 @@ class DiagnosisClient {
       const pool = require("./db/pool");
       const [rows] = await pool.execute(
         "SELECT diagnosis_id, user_id FROM diagnoses WHERE diagnosis_id = ? LIMIT 1",
-        [diagnosisId]
+        [diagnosisId],
       );
       if (rows.length === 0) return { exists: false, owned: false };
       return { exists: true, owned: rows[0].user_id === userId };

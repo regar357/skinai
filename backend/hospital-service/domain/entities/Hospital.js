@@ -11,7 +11,8 @@ const DomainError = require("./DomainError");
 
 class Hospital extends HospitalModel {
   static validateCoordinates(lat, lng) {
-    if (lat === undefined || lng === undefined) throw new DomainError("위치 정보(위도, 경도)는 필수입니다.");
+    if (lat === undefined || lng === undefined)
+      throw new DomainError("위치 정보(위도, 경도)는 필수입니다.");
   }
 }
 

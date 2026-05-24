@@ -2,23 +2,39 @@
  * ═══════════════════════════════════════════════
  * Content Application Service (응용 계층)
  * ═══════════════════════════════════════════════
- * 
+ *
  * 통합 기능:
  *   - 피부백과 CRUD
  *   - 공지사항 CRUD
  */
-const { Encyclopedia, DomainError: EncError } = require("../domain/entities/Encyclopedia");
-const { Notice, DomainError: NoticeError } = require("../domain/entities/Notice");
+const {
+  Encyclopedia,
+  DomainError: EncError,
+} = require("../domain/entities/Encyclopedia");
+const {
+  Notice,
+  DomainError: NoticeError,
+} = require("../domain/entities/Notice");
 
 class ContentService {
-  constructor(contentRepository) { this.contentRepository = contentRepository; }
+  constructor(contentRepository) {
+    this.contentRepository = contentRepository;
+  }
 
   // ── 피부백과 ──────────────────────────────
 
-  async getArticles(page = 1, limit = 10, category) {
-    const articles = await this.contentRepository.findArticles(page, limit, category);
-    const total = await this.contentRepository.countArticles(category);
-    return { articles, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  async getArticles(page = 1, limit = 10, category, query) {
+    const articles = await this.contentRepository.findArticles(
+      page,
+      limit,
+      category,
+      query,
+    );
+    const total = await this.contentRepository.countArticles(category, query);
+    return {
+      articles,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async getArticleById(id) {
@@ -51,7 +67,10 @@ class ContentService {
   async getNotices(page = 1, limit = 10) {
     const notices = await this.contentRepository.findNotices(page, limit);
     const total = await this.contentRepository.countNotices();
-    return { notices, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      notices,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async getNoticeById(id) {

@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+.env
+.env.*
+!.env.local.example
+.git
+npm-debug.log
+pnpm-debug.log

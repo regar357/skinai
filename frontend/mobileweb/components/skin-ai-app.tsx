@@ -9,6 +9,7 @@ import {
   BookOpen,
   MapPin,
   Camera,
+  ArrowLeft,
 } from "lucide-react"
 import { SkinLogo } from "@/components/skin-logo"
 import { HomePage } from "@/components/home-page"
@@ -139,7 +140,7 @@ export function SkinAIApp() {
         className={`relative z-10 flex min-h-svh flex-col items-center px-4 pb-28 font-sans ${fontSizeBodyMap[fontSize]} ${!showResult && activeTab === "home" ? "pt-8" : "pt-2"}`}
       >
         {/* ===== Top Bar ===== */}
-        <header className={`flex w-full max-w-[400px] items-center ${!showResult && activeTab === "home" ? "mb-4" : "mb-4"}`}>
+        <header className="flex w-full max-w-[400px] items-center justify-between mb-4">
           {!showResult && activeTab === "home" ? (
             // Home page: centered logo
             <div className="flex-1 flex justify-center">
@@ -155,6 +156,16 @@ export function SkinAIApp() {
                 Skin<span className="bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">AI</span>
               </h1>
             </div>
+          )}
+          {showResult && (
+            <button
+              type="button"
+              onClick={handleBackFromResult}
+              className="group flex items-center gap-2 rounded-2xl border border-white/40 bg-white/60 px-4 py-2.5 text-sm font-bold text-foreground shadow-md backdrop-blur-xl transition-all hover:scale-[1.03] hover:shadow-lg active:scale-[0.97]"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+              다시 진단하기
+            </button>
           )}
         </header>
 
