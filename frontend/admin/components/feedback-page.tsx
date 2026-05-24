@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { feedbacksApi } from "@/src/api/feedbacks";
-import { feedbacksApi } from "@/src/api/feedbacks";
 
 type FeedbackStatus = "pending" | "answered";
 
@@ -65,12 +64,6 @@ export function FeedbackPage() {
   });
 
   // 페이징 처리
-  const startIndex = (currentPage - 1) * pagination.pageSize;
-  const endIndex = startIndex + pagination.pageSize;
-  const paginatedFeedback = filteredFeedback.slice(startIndex, endIndex);
-
-  const totalPages = Math.ceil(filteredFeedback.length / pagination.pageSize);
-
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedFeedback = filteredFeedback.slice(
     startIndex,

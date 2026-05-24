@@ -173,7 +173,6 @@ export function EncyclopediaPage() {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddClick}>
-        <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddClick}>
           <Plus className="mr-2 h-4 w-4" />
           새 백과사전 항목 추가
         </Button>
@@ -198,10 +197,8 @@ export function EncyclopediaPage() {
               <TableRow className="hover:bg-transparent border-b">
                 <TableHead className="w-16 font-medium text-gray-700">ID</TableHead>
                 <TableHead className="w-64 font-medium text-gray-700">제목</TableHead>
-                <TableHead className="w-64 font-medium text-gray-700">제목</TableHead>
                 <TableHead className="font-medium text-gray-700">설명</TableHead>
                 <TableHead className="w-32 font-medium text-gray-700">수정일</TableHead>
-                <TableHead className="w-32 font-medium text-gray-700" style={{ textAlign: 'left', paddingLeft: '50px' }}>관리</TableHead>
                 <TableHead className="w-32 font-medium text-gray-700" style={{ textAlign: 'left', paddingLeft: '50px' }}>관리</TableHead>
               </TableRow>
             </TableHeader>
