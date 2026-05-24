@@ -1,6 +1,9 @@
-node_modules.next;
-dist;
-build.git;
-pnpm - debug.log;
-npm - debug.log;
-yarn - error.log;
+node_modules
+.next
+out
+.env
+.env.*
+!.env.local.example
+.git
+npm-debug.log
+pnpm-debug.log
