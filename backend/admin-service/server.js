@@ -65,3 +65,5 @@ app.use((req, res) =>
 
 app.listen(port, () => console.log(`[admin-service] running on port ${port}`));
 module.exports = app;
+
+//CI/CD용 테스트 주석
