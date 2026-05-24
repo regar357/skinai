@@ -34,7 +34,7 @@ services:
     image: mysql:8.0
     container_name: skinai-mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "1234"
     volumes:
@@ -112,6 +112,7 @@ services:
       <<: [*jwt-env, *db-env]
       PORT: 3003
       USER_DB_NAME: skinai_user
+      AUTH_SERVICE_URL: http://auth-service:3002
     depends_on:
       mysql:
         condition: service_healthy
@@ -236,6 +237,7 @@ services:
       MONITORING_DB_NAME: skinai_monitoring
       DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
       USER_SERVICE_URL: http://user-service:3003
+      AI_SERVICE_URL: http://ai:8001
     depends_on:
       mysql:
         condition: service_healthy
