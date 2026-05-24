@@ -221,6 +221,7 @@ services:
       MONITORING_DB_NAME: skinai_monitoring
       DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
       USER_SERVICE_URL: http://user-service:3003
+      AI_SERVICE_URL: http://ai:8001
     restart: unless-stopped
 
   # ────────────────────────────────────────────
