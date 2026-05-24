@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from "react"
-import React, { useState } from "react"
 import { Search, Plus, Download, Calendar } from "lucide-react"
 import {
   Table,
@@ -22,10 +21,7 @@ import {
 } from "@/components/ui/select"
 import { searchService, MockUser } from "@/src/services/search-service"
 import { usersApi } from "@/src/api/users"
-import { searchService, MockUser } from "@/src/services/search-service"
-import { usersApi } from "@/src/api/users"
 
-function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
 function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
   if (status === "활성") {
     return (
@@ -34,16 +30,6 @@ function StatusBadge({ status }: { status: "활성" | "정지" | "삭제" }) {
       </span>
     )
   }
-  if (status === "정지") {
-    return (
-      <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700">
-        정지
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-700">
-      삭제
   if (status === "정지") {
     return (
       <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700">
@@ -192,7 +178,6 @@ export function UsersPage() {
           </TableHeader>
           <TableBody>
             {users.map((user: MockUser) => (
-            {users.map((user: MockUser) => (
               <TableRow key={user.id} className="border-b border-gray-100 hover:bg-gray-50/50">
                 <TableCell className="px-5 py-4 text-sm font-medium text-blue-600">{user.id}</TableCell>
                 <TableCell className="px-5 py-4 text-sm text-gray-800 font-medium">{user.username}</TableCell>
@@ -208,13 +193,9 @@ export function UsersPage() {
                     <span className="flex gap-3">
                       <button className="text-orange-500 hover:text-orange-600 font-medium" onClick={() => handleSuspend(user.id)}>정지</button>
                       <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
-                      <button className="text-orange-500 hover:text-orange-600 font-medium" onClick={() => handleSuspend(user.id)}>정지</button>
-                      <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                     </span>
                   ) : (
                     <span className="flex gap-3">
-                      <button className="text-blue-500 hover:text-blue-600 font-medium" onClick={() => handleUnsuspend(user.id)}>해제</button>
-                      <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                       <button className="text-blue-500 hover:text-blue-600 font-medium" onClick={() => handleUnsuspend(user.id)}>해제</button>
                       <button className="text-red-500 hover:text-red-600 font-medium" onClick={() => handleDeleteClick(user.id)}>삭제</button>
                     </span>
@@ -224,7 +205,6 @@ export function UsersPage() {
             ))}
           </TableBody>
         </Table>
-        {users.length === 0 && (
         {users.length === 0 && (
           <div className="py-16 text-center text-sm text-gray-400">
             검색 결과가 없습니다.
