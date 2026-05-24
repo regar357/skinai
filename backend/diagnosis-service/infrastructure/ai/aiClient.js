@@ -2,7 +2,7 @@ const { URL } = require("url");
 const http = require("http");
 const https = require("https");
 
-const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+const aiServiceUrl = process.env.AI_SERVICE_URL || "http://localhost:8001";
 const aiServicePath = process.env.AI_SERVICE_PATH || "/api/v1/predict";
 
 function createMultipartBody(buffer, mimeType, filename) {
