@@ -1,7 +1,7 @@
 // API Response Types based on api-spec.md
 
 // DB 명세에 따른 사용자 상태 타입
-export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED';
+export type UserStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
 
 export interface User {
   user_id: number;
@@ -15,11 +15,23 @@ export interface AIAnalysisResult {
   analysis_id: number;
   image_id: number;
   user_id: number;
-  result_status: 'NORMAL' | 'ABNORMAL';
+  result_status: "NORMAL" | "ABNORMAL";
   suspected_disease: string;
   confidence_score: number;
   guide_text: string;
   created_at: string;
+}
+
+// 검사기록 탭에 맞는 타입
+export interface ExamRecord {
+  id: number;
+  username: string;
+  userId: string;
+  examDate: string;
+  examType: string;
+  result: string;
+  confidence: number;
+  imageId: string;
 }
 
 // 검사기록 탭에 맞는 타입
@@ -49,12 +61,16 @@ export interface Feedback {
   analysis_id: number;
   content: string;
   rating: number;
-  status: 'pending' | 'answered';
+  status: "pending" | "answered";
+  status: "pending" | "answered";
   created_at: string;
+  admin_reply?: string;
   admin_reply?: string;
 }
 
 export interface Disease {
+  id: number;
+  title: string;
   id: number;
   title: string;
   description: string;

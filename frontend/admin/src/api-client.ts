@@ -79,6 +79,8 @@ class ApiClient {
     } catch (error) {
       // 개발 모드에서는 에러 메시지 숨김
       // console.error('API Request Error:', error);
+      // 개발 모드에서는 에러 메시지 숨김
+      // console.error('API Request Error:', error);
       throw error;
     }
   }
@@ -146,6 +148,8 @@ class ApiClient {
 
       return data;
     } catch (error) {
+      // 개발 모드에서는 에러 메시지 숨김
+      // console.error('File Upload Error:', error);
       // 개발 모드에서는 에러 메시지 숨김
       // console.error('File Upload Error:', error);
       throw error;

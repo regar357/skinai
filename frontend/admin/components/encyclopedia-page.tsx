@@ -173,6 +173,7 @@ export function EncyclopediaPage() {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddClick}>
+        <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddClick}>
           <Plus className="mr-2 h-4 w-4" />
           새 백과사전 항목 추가
         </Button>
@@ -197,8 +198,10 @@ export function EncyclopediaPage() {
               <TableRow className="hover:bg-transparent border-b">
                 <TableHead className="w-16 font-medium text-gray-700">ID</TableHead>
                 <TableHead className="w-64 font-medium text-gray-700">제목</TableHead>
+                <TableHead className="w-64 font-medium text-gray-700">제목</TableHead>
                 <TableHead className="font-medium text-gray-700">설명</TableHead>
                 <TableHead className="w-32 font-medium text-gray-700">수정일</TableHead>
+                <TableHead className="w-32 font-medium text-gray-700" style={{ textAlign: 'left', paddingLeft: '50px' }}>관리</TableHead>
                 <TableHead className="w-32 font-medium text-gray-700" style={{ textAlign: 'left', paddingLeft: '50px' }}>관리</TableHead>
               </TableRow>
             </TableHeader>
@@ -235,6 +238,8 @@ export function EncyclopediaPage() {
                   <TableCell className="py-4 text-gray-600">{entry.modifiedDate}</TableCell>
                   <TableCell className="py-4 text-right">
                     <div className="flex justify-end gap-3">
+                      <button className="text-sm text-blue-500 hover:text-blue-700 font-medium" onClick={() => handleEdit(entry.id)}>수정</button>
+                      <button className="text-sm text-red-500 hover:text-red-700 font-medium" onClick={() => handleDeleteClick(entry.id)}>삭제</button>
                       <button className="text-sm text-blue-500 hover:text-blue-700 font-medium" onClick={() => handleEdit(entry.id)}>수정</button>
                       <button className="text-sm text-red-500 hover:text-red-700 font-medium" onClick={() => handleDeleteClick(entry.id)}>삭제</button>
                     </div>
@@ -290,8 +295,207 @@ export function EncyclopediaPage() {
               </div>
             </div>
           )}
+
+          {/* 페이징 */}
+          {pagination.total > 0 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="text-sm text-gray-700">
+                총 {pagination.total}개 중 {((currentPage - 1) * pagination.pageSize) + 1}-{Math.min(currentPage * pagination.pageSize, pagination.total)}개 표시
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  이전
+                </button>
+                
+                {Array.from({ length: Math.ceil(pagination.total / pagination.pageSize) }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1 text-sm border rounded-md ${
+                      currentPage === page
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === Math.ceil(pagination.total / pagination.pageSize)}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  다음
+                </button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* 삭제 확인 모달 */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">백과사전 항목 삭제</h3>
+            <p className="text-gray-600 mb-6">
+              정말로 이 백과사전 항목을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleDeleteCancel}
+                variant="outline"
+                className="px-4 py-2"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleDeleteConfirm}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2"
+              >
+                삭제
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 새 항목 추가 모달 */}
+      {showAddModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">새 백과사전 항목 추가</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  제목
+                </label>
+                <Input
+                  placeholder="제목을 입력하세요"
+                  value={newEntry.title}
+                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  설명
+                </label>
+                <textarea
+                  placeholder="설명을 입력하세요"
+                  value={newEntry.description}
+                  onChange={(e) => setNewEntry({ ...newEntry, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end mt-6">
+              <Button
+                onClick={handleAddCancel}
+                variant="outline"
+                className="px-4 py-2"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleAddSubmit}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2"
+                disabled={!newEntry.title.trim() || !newEntry.description.trim()}
+              >
+                추가
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 항목 수정 모달 */}
+      {showEditModal && editingEntry && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">백과사전 항목 수정</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  제목
+                </label>
+                <Input
+                  placeholder="제목을 입력하세요"
+                  value={editingEntry.title}
+                  onChange={(e) => setEditingEntry({ ...editingEntry, title: e.target.value })}
+                  className="w-full"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  설명
+                </label>
+                <textarea
+                  placeholder="설명을 입력하세요"
+                  value={editingEntry.description}
+                  onChange={(e) => setEditingEntry({ ...editingEntry, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end mt-6">
+              <Button
+                onClick={handleEditCancel}
+                variant="outline"
+                className="px-4 py-2"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleEditSubmit}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2"
+                disabled={!editingEntry.title.trim() || !editingEntry.description.trim()}
+              >
+                수정
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 상세보기 모달 */}
+      {showDetailModal && selectedEntry && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-3xl w-full mx-4 shadow-lg max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">{selectedEntry.title}</h3>
+              <button
+                onClick={handleDetailClose}
+                className="text-gray-400 hover:text-gray-600 text-4xl leading-none p-2 -m-2"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                  {selectedEntry.description}
+                </p>
+              </div>
+              
+                          </div>
+          </div>
+        </div>
+      )}
 
       {/* 삭제 확인 모달 */}
       {deleteConfirmId && (
