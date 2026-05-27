@@ -74,12 +74,17 @@ export function HospitalFinderPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentLocation, setCurrentLocation] =
     useState<LocationPoint>(DEFAULT_LOCATION);
-  const [locationLabel, setLocationLabel] = useState("서울시 강남구");
+  const [locationLabel, setLocationLabel] = useState("내 위치 확인 중...");
+  const [locationReady, setLocationReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setLocationLabel("서울시 강남구");
+      setLocationReady(true);
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -93,21 +98,25 @@ export function HospitalFinderPage() {
             nextLocation.lat,
             nextLocation.lng,
           );
-          if (result.address) setLocationLabel(result.address);
+          setLocationLabel(result.address || "현재 위치");
         } catch {
           setLocationLabel("현재 위치");
         } finally {
           setCurrentLocation(nextLocation);
+          setLocationReady(true);
         }
       },
       () => {
         setLocationLabel("서울시 강남구");
+        setLocationReady(true);
       },
-      { enableHighAccuracy: true, timeout: 7000 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   }, []);
 
   useEffect(() => {
+    if (!locationReady) return;
+
     const loadHospitals = async () => {
       setIsLoading(true);
       setErrorMessage(null);
@@ -119,7 +128,7 @@ export function HospitalFinderPage() {
           sort: sortBy,
           page: currentPage,
           size: itemsPerPage,
-          address: locationLabel,
+          address: locationLabel === "내 위치 확인 중..." ? undefined : locationLabel,
         });
         const mapped = response.items.map((item) => ({
           id: item.id,
@@ -145,7 +154,7 @@ export function HospitalFinderPage() {
       }
     };
     void loadHospitals();
-  }, [sortBy, currentPage, currentLocation, locationLabel]);
+  }, [sortBy, currentPage, currentLocation, locationLabel, locationReady]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
 
