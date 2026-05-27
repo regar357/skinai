@@ -122,7 +122,7 @@ function DetailModal({ item, onClose }: { item: HistoryItem; onClose: () => void
           <div className="flex gap-4">
             {/* Photo */}
             <div className="relative h-48 w-48 overflow-hidden rounded-2xl shadow-lg flex-shrink-0">
-              <img src={resolvedItem.thumbnail} alt="" className="h-full w-full object-cover" crossOrigin="anonymous" />
+              <img src={resolvedItem.thumbnail} alt="" className="h-full w-full object-cover" />
             </div>
             
             {/* Date and Disease Name */}
@@ -301,7 +301,7 @@ export function HistoryPage() {
 
               {/* Thumbnail */}
               <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-2xl shadow-md">
-                <img src={item.thumbnail} alt={`Diagnosis from ${item.date}`} className="h-full w-full object-cover" crossOrigin="anonymous" />
+                <img src={item.thumbnail} alt={`Diagnosis from ${item.date}`} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/5" />
               </div>
 

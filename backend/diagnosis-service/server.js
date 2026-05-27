@@ -14,9 +14,10 @@ const createDiagnosisRoutes = require("./interfaces/routes/diagnosisRoutes");
 const createInternalMonitoringRoutes = require("./interfaces/routes/internalMonitoringRoutes");
 const createInternalAdminRoutes = require("./interfaces/routes/internalAdminRoutes");
 
+const storageService = require("./infrastructure/storage/StorageService");
 const diagnosisRepository = new DiagnosisRepositoryImpl(pool);
 const diagnosisService = new DiagnosisService(diagnosisRepository);
-const diagnosisController = new DiagnosisController(diagnosisService);
+const diagnosisController = new DiagnosisController(diagnosisService, storageService);
 const internalMonitoringService = new InternalMonitoringService(pool);
 const internalMonitoringController = new InternalMonitoringController(internalMonitoringService);
 const internalAdminService = new InternalAdminService(pool);

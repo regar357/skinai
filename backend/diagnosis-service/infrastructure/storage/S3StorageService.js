@@ -1,4 +1,5 @@
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 
@@ -29,7 +30,21 @@ class S3StorageService {
       })
     );
 
+    // DB에는 원본 S3 URL 저장 (영구 식별자)
     return `https://${this.bucket}.s3.${process.env.AWS_REGION || "ap-northeast-2"}.amazonaws.com/${key}`;
+  }
+
+  // S3 URL → 1시간 유효 Presigned URL 변환
+  async getSignedUrl(rawUrl) {
+    if (!rawUrl) return "";
+    try {
+      const url = new URL(rawUrl);
+      const key = url.pathname.slice(1); // 앞의 '/' 제거
+      const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+      return await getSignedUrl(this.client, command, { expiresIn: 3600 });
+    } catch {
+      return rawUrl;
+    }
   }
 }
 
