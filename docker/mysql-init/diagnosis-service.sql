@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS images (
   user_id       INT NOT NULL,
   diagnosis_id  INT DEFAULT NULL,
   original_url  VARCHAR(500) NOT NULL,
-  processed_url VARCHAR(500) DEFAULT NULL,
   file_size     INT DEFAULT 0,
   mime_type     VARCHAR(50) DEFAULT 'image/jpeg',
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

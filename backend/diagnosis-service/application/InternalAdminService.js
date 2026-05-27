@@ -41,7 +41,7 @@ class InternalAdminService {
   async getImageInfo(imageId) {
     const [rows] = await this.pool.execute(
       `SELECT image_id, user_id, diagnosis_id, original_url AS image_url,
-              processed_url, file_size, mime_type, created_at AS uploaded_at
+              file_size, mime_type, created_at AS uploaded_at
        FROM images WHERE image_id = ? LIMIT 1`,
       [imageId],
     );
