@@ -47,10 +47,14 @@ services:
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - mobileweb
-      - admin-web
-      - api-gateway
-      - ai
+      mobileweb:
+        condition: service_healthy
+      admin-web:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+      ai:
+        condition: service_started
     restart: unless-stopped
 
   # ────────────────────────────────────────────
@@ -250,6 +254,12 @@ services:
     depends_on:
       - api-gateway
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # ────────────────────────────────────────────
   # 관리자 프론트엔드 (내부 3000 → nginx :3010)
@@ -264,3 +274,9 @@ services:
     depends_on:
       - api-gateway
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
