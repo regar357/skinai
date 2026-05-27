@@ -12,9 +12,6 @@ class UserModel {
     email,
     password,
     name,
-    phone,
-    birth_date,
-    gender,
     status,
     last_login_at,
     created_at,
@@ -24,9 +21,6 @@ class UserModel {
     this.email = email;
     this.password = password;
     this.name = name;
-    this.phone = phone || null;
-    this.birth_date = birth_date || null;
-    this.gender = gender || null;
     this.status = status || "active";
     this.last_login_at = last_login_at || null;
     this.created_at = created_at || null;

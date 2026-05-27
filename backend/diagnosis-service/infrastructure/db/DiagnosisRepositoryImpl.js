@@ -74,12 +74,11 @@ class DiagnosisRepositoryImpl extends DiagnosisRepository {
 
   async saveImage(img) {
     const [result] = await this.pool.execute(
-      "INSERT INTO images (user_id, diagnosis_id, original_url, processed_url, file_size, mime_type, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+      "INSERT INTO images (user_id, diagnosis_id, original_url, file_size, mime_type, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
       [
         img.user_id,
         img.diagnosis_id,
         img.original_url,
-        img.processed_url,
         img.file_size,
         img.mime_type,
       ],
