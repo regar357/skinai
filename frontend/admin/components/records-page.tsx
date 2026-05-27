@@ -115,12 +115,16 @@ export function RecordsPage() {
                 <TableCell className="px-5 py-4 text-sm text-blue-600 font-medium">{record.userId}</TableCell>
                 <TableCell className="px-5 py-4 text-sm text-gray-600">{record.examDate}</TableCell>
                 <TableCell className="px-5 py-4 text-sm">
-                  <button 
-                    className="text-blue-500 hover:text-blue-600 font-medium"
-                    onClick={() => handleImageClick(record.imageId)}
-                  >
-                    {record.imageId}
-                  </button>
+                  {record.imageUrl ? (
+                    <img
+                      src={record.imageUrl}
+                      alt="진단 이미지"
+                      className="h-12 w-12 rounded-md object-cover cursor-pointer"
+                      onClick={() => handleImageClick(record.imageId)}
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-xs">없음</span>
+                  )}
                 </TableCell>
                 <TableCell className="px-5 py-4 text-sm text-gray-700">{record.result}</TableCell>
                 <TableCell className="px-5 py-4 text-sm text-gray-700">{record.confidence}%</TableCell>

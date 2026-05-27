@@ -39,6 +39,7 @@ export interface MockExamRecord {
   result: string;
   confidence: number;
   imageId: string;
+  imageUrl: string;
 }
 
 // 검색 결과 인터페이스
@@ -126,9 +127,9 @@ class MockDataProvider {
   ];
 
   private static records: MockExamRecord[] = [
-    { id: 1000, username: "김민준", userId: "U001", examDate: "2024-07-21", examType: "피부 종양 검사", result: "기저세포암 의심", confidence: 85, imageId: "IMG001" },
-    { id: 1001, username: "이서연", userId: "U002", examDate: "2024-07-20", examType: "흑색종 검사", result: "정상 소견", confidence: 95, imageId: "IMG002" },
-    { id: 1002, username: "박지호", userId: "U003", examDate: "2024-07-19", examType: "피부 종양 검사", result: "편평세포암 가능성", confidence: 72, imageId: "IMG003" },
+    { id: 1000, username: "김민준", userId: "U001", examDate: "2024-07-21", examType: "피부 종양 검사", result: "기저세포암 의심", confidence: 85, imageId: "IMG001", imageUrl: "" },
+    { id: 1001, username: "이서연", userId: "U002", examDate: "2024-07-20", examType: "흑색종 검사", result: "정상 소견", confidence: 95, imageId: "IMG002", imageUrl: "" },
+    { id: 1002, username: "박지호", userId: "U003", examDate: "2024-07-19", examType: "피부 종양 검사", result: "편평세포암 가능성", confidence: 72, imageId: "IMG003", imageUrl: "" },
   ];
 
   static getUsers(): MockUser[] { return this.users; }
@@ -157,14 +158,20 @@ class SearchService {
           apiStatus
         ) as any;
 
+        const formatDate = (val: any) => {
+          if (!val) return '';
+          const d = new Date(val);
+          if (isNaN(d.getTime())) return String(val);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
         const items = (res.data?.data || res.data || []).map((u: any) => ({
           id: u.user_id,
           username: u.name,
           email: u.email,
           status: u.status === 'active' ? '활성' : u.status === 'suspended' ? '정지' : '삭제' as any,
-          joinDate: u.created_at || '',
-          lastLogin: u.last_login_at || '',
-          analysisCount: 0,
+          joinDate: formatDate(u.created_at),
+          lastLogin: formatDate(u.last_login_at),
+          analysisCount: Number(u.diagnosis_count) || 0,
         }));
         const pg = res.data?.pagination || res.pagination || {};
         return { data: items, total: pg.total || 0, page: pg.page || 1, pageSize: pg.limit || 10 };
@@ -284,11 +291,12 @@ class SearchService {
           id: r.diagnosis_id || r.id,
           username: r.user_name || `User #${r.user_id}`,
           userId: String(r.user_id || ''),
-          examDate: r.created_at || '',
+          examDate: r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : '',
           examType: r.diagnosis_type || '',
           result: r.result_summary || r.status || '',
-          confidence: Number(r.ai_confidence) || 0,
+          confidence: r.ai_confidence != null ? Math.round(Number(r.ai_confidence) * 100) : 0,
           imageId: String(r.diagnosis_id || r.id || ''),
+          imageUrl: r.image_url || '',
         }));
         const pg = res.data?.pagination || res.pagination || {};
         return { data: items, total: pg.total || 0, page: pg.page || 1, pageSize: pg.limit || 10 };

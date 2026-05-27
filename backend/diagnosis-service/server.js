@@ -20,7 +20,7 @@ const diagnosisService = new DiagnosisService(diagnosisRepository);
 const diagnosisController = new DiagnosisController(diagnosisService, storageService);
 const internalMonitoringService = new InternalMonitoringService(pool);
 const internalMonitoringController = new InternalMonitoringController(internalMonitoringService);
-const internalAdminService = new InternalAdminService(pool);
+const internalAdminService = new InternalAdminService(pool, storageService);
 const internalAdminController = new InternalAdminController(internalAdminService);
 
 const app = express();

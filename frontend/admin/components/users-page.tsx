@@ -278,33 +278,6 @@ export function UsersPage() {
           </div>
         </div>
       )}
-
-      {/* 삭제 확인 모달 */}
-      {deleteConfirmUserId && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">사용자 삭제</h3>
-            <p className="text-gray-600 mb-6">
-              정말로 이 사용자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={handleDeleteCancel}
-                variant="outline"
-                className="px-4 py-2"
-              >
-                취소
-              </Button>
-              <Button
-                onClick={handleDeleteConfirm}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2"
-              >
-                삭제
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
