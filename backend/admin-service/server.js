@@ -14,21 +14,18 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-const pool = require("./infrastructure/db/pool");
 const {
   authenticate,
   requireAdmin,
 } = require("./infrastructure/middleware/auth");
 const ServiceClient = require("./infrastructure/clients/ServiceClient");
-const AdminRepositoryImpl = require("./infrastructure/db/AdminRepositoryImpl");
 const AdminService = require("./application/AdminService");
 const AdminController = require("./interfaces/AdminController");
 const createAdminRoutes = require("./interfaces/routes/adminRoutes");
 
 // ── 의존성 조립 ───────────────────────────
 const serviceClient = new ServiceClient();
-const adminRepository = new AdminRepositoryImpl(pool);
-const adminService = new AdminService({ serviceClient, adminRepository });
+const adminService = new AdminService({ serviceClient });
 const adminController = new AdminController(adminService);
 
 const app = express();

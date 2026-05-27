@@ -208,9 +208,8 @@ services:
     ports:
       - "3008:3008"
     environment:
-      <<: [*jwt-env, *db-env]
+      <<: *jwt-env
       PORT: 3008
-      ADMIN_DB_NAME: skinai_admin
       AUTH_SERVICE_URL: http://auth-service:3002
       USER_SERVICE_URL: http://user-service:3003
       DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004

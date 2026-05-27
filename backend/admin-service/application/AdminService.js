@@ -12,9 +12,8 @@
  *   - 대시보드/AI 모니터링 통계 집계
  */
 class AdminService {
-  constructor({ serviceClient, adminRepository }) {
+  constructor({ serviceClient }) {
     this.serviceClient = serviceClient;
-    this.adminRepository = adminRepository;
   }
 
   // ─────────────────────────────────────────────
