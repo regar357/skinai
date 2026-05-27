@@ -36,6 +36,20 @@ const DEFAULT_LOCATION: LocationPoint = {
   lng: 127.0276,
 };
 
+async function getLocationByIp(): Promise<LocationPoint | null> {
+  try {
+    const res = await fetch("https://ipapi.co/json/");
+    if (!res.ok) return null;
+    const data = await res.json() as { latitude?: number; longitude?: number };
+    if (typeof data.latitude === "number" && typeof data.longitude === "number") {
+      return { lat: data.latitude, lng: data.longitude };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function getPhoneHref(phone: string | null) {
   const digits = phone?.replace(/[^\d+]/g, "");
   return digits ? `tel:${digits}` : undefined;
@@ -106,8 +120,20 @@ export function HospitalFinderPage() {
           setLocationReady(true);
         }
       },
-      () => {
-        setLocationLabel("서울시 강남구");
+      async () => {
+        const ipLoc = await getLocationByIp();
+        if (ipLoc) {
+          try {
+            const result = await hospitalService.reverseGeocode(ipLoc.lat, ipLoc.lng);
+            setLocationLabel(result.address || "현재 위치");
+          } catch {
+            setLocationLabel("현재 위치");
+          } finally {
+            setCurrentLocation(ipLoc);
+          }
+        } else {
+          setLocationLabel("서울시 강남구");
+        }
         setLocationReady(true);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
