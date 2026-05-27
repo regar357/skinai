@@ -22,6 +22,7 @@ module.exports = (userController, authMiddleware) => {
   // 내부 API (서비스 간 통신용)
   router.post("/internal/create", userController.createUser);
   router.get("/internal/by-email/:email", userController.getByEmail);
+  router.post("/internal/update-last-login/:userId", userController.updateLastLogin);
 
   return router;
 };

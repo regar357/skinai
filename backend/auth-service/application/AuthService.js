@@ -149,11 +149,22 @@ class AuthService {
       role: auth.role,
     });
 
+    this._updateUserLastLogin(auth.user_id);
+
     return {
       accessToken,
       refreshToken,
       user: { id: auth.user_id, name: auth.name || "", email: auth.email, role: auth.role },
     };
+  }
+
+  async _updateUserLastLogin(userId) {
+    try {
+      await fetch(
+        `${USER_SERVICE_URL}/api/v1/users/internal/update-last-login/${userId}`,
+        { method: "POST" },
+      );
+    } catch { /* best-effort, 실패 시 무시 */ }
   }
 
   // ─────────────────────────────────────────────

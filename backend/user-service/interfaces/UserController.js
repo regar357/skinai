@@ -53,6 +53,16 @@ class UserController {
     }
   };
 
+  // ── [내부 API] 마지막 로그인 시각 업데이트 (auth-service 로그인 성공 시) ──
+  updateLastLogin = async (req, res, next) => {
+    try {
+      await this.userService.updateLastLogin(req.params.userId);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // ── [내부 API] 이메일로 사용자 조회 (auth-service 로그인 시) ──
   getByEmail = async (req, res, next) => {
     try {
