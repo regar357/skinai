@@ -14,8 +14,9 @@
  *   GET    /api/v1/diagnoses/:id/logs      - 진단별 로그 조회
  */
 class DiagnosisController {
-  constructor(service) {
+  constructor(service, storageService) {
     this.service = service;
+    this.storageService = storageService;
   }
 
   normalizeDiagnosis(raw) {
@@ -99,8 +100,12 @@ class DiagnosisController {
         page,
         limit,
       );
-      const items = result.diagnoses.map((diagnosis) =>
-        this.formatHistoryItem(diagnosis),
+      const items = await Promise.all(
+        result.diagnoses.map(async (diagnosis) => {
+          const item = this.formatHistoryItem(diagnosis);
+          item.thumbnail = await this.storageService.getSignedUrl(item.thumbnail);
+          return item;
+        }),
       );
       res.status(200).json({
         items,

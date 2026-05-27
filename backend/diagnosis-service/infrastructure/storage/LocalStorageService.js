@@ -6,6 +6,10 @@ const UPLOAD_DIR = path.join(__dirname, "../../uploads");
 const SERVICE_URL = process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
 
 class LocalStorageService {
+  async getSignedUrl(url) {
+    return url; // 로컬은 바로 접근 가능하므로 그대로 반환
+  }
+
   async upload(file, userId) {
     if (!fs.existsSync(UPLOAD_DIR)) {
       fs.mkdirSync(UPLOAD_DIR, { recursive: true });
