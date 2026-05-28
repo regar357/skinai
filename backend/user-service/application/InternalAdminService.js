@@ -11,8 +11,10 @@ class InternalAdminService {
     const params = [];
     let where = "";
     if (status) { where = "WHERE status = ?"; params.push(status); }
+    const diagnosisDb = process.env.DIAGNOSIS_DB_NAME || "skinai_diagnosis";
     const [rows] = await this.pool.execute(
-      `SELECT user_id, name, email, status, created_at, last_login_at
+      `SELECT user_id, name, email, status, created_at, last_login_at,
+              (SELECT COUNT(*) FROM \`${diagnosisDb}\`.diagnoses d WHERE d.user_id = users.user_id) AS diagnosis_count
        FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [...params, String(limit), String(offset)],
     );

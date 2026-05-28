@@ -62,6 +62,11 @@ class UserService {
   async getByEmail(email) {
     return await this.userRepository.findByEmail(email);
   }
+
+  // ── [내부] 마지막 로그인 시각 업데이트 (auth-service 호출) ──
+  async updateLastLogin(userId) {
+    await this.userRepository.updateLastLoginAt(userId);
+  }
 }
 
 module.exports = UserService;

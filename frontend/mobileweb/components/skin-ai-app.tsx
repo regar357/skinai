@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, createContext, useContext } from "react"
+import { useState, createContext, useContext, useEffect } from "react"
 import {
   Home,
   History,
@@ -19,7 +19,8 @@ import { ResultPage } from "@/components/result-page"
 import { EncyclopediaPage } from "@/components/encyclopedia-page"
 import { HospitalFinderPage } from "@/components/hospital-finder-page"
 import { AuthPage } from "@/components/auth-page"
-import { authService } from "@/lib/api-services"
+import { authService, profileService } from "@/lib/api-services"
+import { getStoredTokens, clearStoredTokens } from "@/lib/api-client"
 
 /* ========== Font Size Context ========== */
 type FontSize = "small" | "medium" | "large"
@@ -70,6 +71,27 @@ export function SkinAIApp() {
   /* Auth state */
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<UserData>({ name: "", email: "" })
+  const [authReady, setAuthReady] = useState(false)
+
+  /* 새로고침 시 localStorage 토큰으로 로그인 상태 복원 */
+  useEffect(() => {
+    const tokens = getStoredTokens()
+    if (!tokens) {
+      setAuthReady(true)
+      return
+    }
+    profileService.getMyProfile()
+      .then((profile) => {
+        setUser({ name: profile.name, email: profile.email })
+        setIsLoggedIn(true)
+      })
+      .catch(() => {
+        clearStoredTokens()
+      })
+      .finally(() => {
+        setAuthReady(true)
+      })
+  }, [])
 
   /* Navigation state */
   const [activeTab, setActiveTab] = useState<TabId>("home")
@@ -110,6 +132,15 @@ export function SkinAIApp() {
   }
 
   const showResult = !!resultData
+
+  /* 토큰 확인 중 로딩 스피너 표시 */
+  if (!authReady) {
+    return (
+      <div className="flex min-h-svh items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+      </div>
+    )
+  }
 
   /* If not logged in, show full-screen auth */
   if (!isLoggedIn) {

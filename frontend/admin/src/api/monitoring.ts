@@ -52,7 +52,6 @@ export const monitoringApi = {
     return apiClient.get<DiseaseAccuracy[]>('/admin/monitoring/disease-accuracy');
   },
 
-  
   // 시스템 상태 조회
   getSystemStatus: (): Promise<ApiResponse<SystemStatus>> => {
     return apiClient.get<SystemStatus>('/admin/monitoring/system-status');

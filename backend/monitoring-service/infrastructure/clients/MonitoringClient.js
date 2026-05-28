@@ -3,7 +3,7 @@ class MonitoringClient {
     this.diagnosisUrl =
       process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
     this.userUrl = process.env.USER_SERVICE_URL || "http://localhost:3003";
-    this.aiUrl = process.env.AI_SERVICE_URL || "http://localhost:8000";
+    this.aiUrl = process.env.AI_SERVICE_URL || "http://localhost:8001";
     this.internalToken =
       process.env.INTERNAL_SERVICE_TOKEN || "internal-dev-token";
   }
@@ -28,6 +28,10 @@ class MonitoringClient {
 
   getDiagnosisPerformance() {
     return this.get(`${this.diagnosisUrl}/internal/monitoring/performance`);
+  }
+
+  getAiPerformance() {
+    return this.get(`${this.aiUrl}/api/admin/monitoring/performance`);
   }
 
   getDiseaseAccuracy() {

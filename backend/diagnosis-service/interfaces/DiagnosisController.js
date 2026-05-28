@@ -6,18 +6,17 @@
  * API 목록:
  *   POST   /api/v1/diagnoses              - 진단 생성 (이미지 업로드 + 분석 요청)
  *   GET    /api/v1/diagnoses/history       - 내 진단 이력
- *   GET    /api/v1/diagnoses/shared/:token - 공유 링크로 결과 조회
  *   GET    /api/v1/diagnoses/logs          - 분석 로그 조회 (관리자)
  *   GET    /api/v1/diagnoses/:id           - 진단 상세 조회
  *   DELETE /api/v1/diagnoses/:id           - 진단 단건 삭제
  *   DELETE /api/v1/diagnoses               - 진단 다건 삭제 ({ ids: [] })
  *   PUT    /api/v1/diagnoses/:id/complete  - 분석 완료 처리 (AI 서비스 콜백)
- *   POST   /api/v1/diagnoses/:id/share     - 공유 링크 생성
  *   GET    /api/v1/diagnoses/:id/logs      - 진단별 로그 조회
  */
 class DiagnosisController {
-  constructor(service) {
+  constructor(service, storageService) {
     this.service = service;
+    this.storageService = storageService;
   }
 
   normalizeDiagnosis(raw) {
@@ -101,8 +100,12 @@ class DiagnosisController {
         page,
         limit,
       );
-      const items = result.diagnoses.map((diagnosis) =>
-        this.formatHistoryItem(diagnosis),
+      const items = await Promise.all(
+        result.diagnoses.map(async (diagnosis) => {
+          const item = this.formatHistoryItem(diagnosis);
+          item.thumbnail = await this.storageService.getSignedUrl(item.thumbnail);
+          return item;
+        }),
       );
       res.status(200).json({
         items,
@@ -158,37 +161,6 @@ class DiagnosisController {
       res
         .status(200)
         .json({ success: true, message: "분석이 완료되었습니다." });
-    } catch (e) {
-      next(e);
-    }
-  };
-
-  // ── 공유 링크 생성 ──────────────────────
-  createShare = async (req, res, next) => {
-    try {
-      const expiresInHours = req.body.expires_in_hours || 72;
-      const result = await this.service.createShareLink(
-        req.params.id,
-        req.user.userId,
-        expiresInHours,
-      );
-      res.status(201).json({
-        success: true,
-        message: "공유 링크가 생성되었습니다.",
-        data: result,
-      });
-    } catch (e) {
-      next(e);
-    }
-  };
-
-  // ── 공유 링크로 조회 ────────────────────
-  getByShareToken = async (req, res, next) => {
-    try {
-      const result = await this.service.getDiagnosisByShareToken(
-        req.params.token,
-      );
-      res.status(200).json({ success: true, data: result });
     } catch (e) {
       next(e);
     }

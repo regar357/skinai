@@ -7,20 +7,13 @@
  *   - 이미지 업로드 → S3 저장
  *   - 분석 수행 (AI 서비스 호출)
  *   - 분석 결과 CRUD
- *   - 분석 결과 공유 (공유 링크 생성)
  *   - 분석 로그 기록
  */
 const { Diagnosis, DomainError } = require("../domain/entities/Diagnosis");
 const { Image } = require("../domain/entities/Image");
-const { ShareLink } = require("../domain/entities/ShareLink");
 const { DiagnosisLog } = require("../domain/entities/DiagnosisLog");
-const { v4: uuidv4 } = require("uuid");
 const aiClient = require("../infrastructure/ai/aiClient");
-const fs = require("fs");
-const path = require("path");
-
-const UPLOAD_DIR = path.join(__dirname, "../uploads");
-const SERVICE_URL = process.env.DIAGNOSIS_SERVICE_URL || "http://localhost:3004";
+const storageService = require("../infrastructure/storage/StorageService");
 
 class DiagnosisService {
   constructor(diagnosisRepository) {
@@ -45,22 +38,17 @@ class DiagnosisService {
     let finalStatus = saved.status;
 
     if (file) {
-      // 로컬 파일 저장 (개발 환경 S3 대체)
-      if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-      const ext = path.extname(file.originalname || "image.jpg") || ".jpg";
-      const filename = `${uuidv4()}${ext}`;
-      fs.writeFileSync(path.join(UPLOAD_DIR, filename), file.buffer);
-      const localUrl = `${SERVICE_URL}/uploads/${filename}`;
+      const imageUrl = await storageService.upload(file, user_id);
 
       const image = new Image({
         user_id,
         diagnosis_id: saved.diagnosis_id,
-        original_url: localUrl,
+        original_url: imageUrl,
         file_size: file.size,
         mime_type: file.mimetype,
       });
       await this.diagnosisRepository.saveImage(image);
-      await this.diagnosisRepository.updateDiagnosis(saved.diagnosis_id, { image_url: localUrl });
+      await this.diagnosisRepository.updateDiagnosis(saved.diagnosis_id, { image_url: imageUrl });
 
       try {
         const aiResponse = await aiClient.sendImage(
@@ -252,59 +240,6 @@ class DiagnosisService {
     );
 
     return updated;
-  }
-
-  // ─────────────────────────────────────────────
-  // 분석 결과 공유 링크 생성
-  // POST /api/v1/diagnoses/:id/share
-  // ─────────────────────────────────────────────
-  async createShareLink(diagnosisId, userId, expiresInHours = 72) {
-    const d = await this.diagnosisRepository.findDiagnosisById(diagnosisId);
-    if (!d) throw new DomainError("진단 기록을 찾을 수 없습니다.", 404);
-    if (d.user_id !== userId)
-      throw new DomainError("접근 권한이 없습니다.", 403);
-
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + expiresInHours);
-
-    const shareLink = new ShareLink({
-      diagnosis_id: diagnosisId,
-      user_id: userId,
-      share_token: uuidv4(),
-      expires_at: expiresAt,
-    });
-
-    const saved = await this.diagnosisRepository.saveShareLink(shareLink);
-
-    // 로그 기록
-    await this.diagnosisRepository.saveLog(
-      DiagnosisLog.create({
-        diagnosis_id: diagnosisId,
-        user_id: userId,
-        action: "shared",
-        detail: `만료: ${expiresInHours}시간`,
-      }),
-    );
-
-    return saved;
-  }
-
-  // ─────────────────────────────────────────────
-  // 공유 링크로 분석 결과 조회
-  // GET /api/v1/diagnoses/shared/:token
-  // ─────────────────────────────────────────────
-  async getDiagnosisByShareToken(token) {
-    const link = await this.diagnosisRepository.findShareLinkByToken(token);
-    if (!link) throw new DomainError("유효하지 않은 공유 링크입니다.", 404);
-    if (link.isExpired()) throw new DomainError("만료된 공유 링크입니다.", 410);
-
-    const d = await this.diagnosisRepository.findDiagnosisById(
-      link.diagnosis_id,
-    );
-    const images = await this.diagnosisRepository.findImagesByDiagnosisId(
-      link.diagnosis_id,
-    );
-    return { ...d, images };
   }
 
   // ─────────────────────────────────────────────

@@ -22,7 +22,7 @@ const API_BASE_URL =
 const ACCESS_TOKEN_KEY = "skinai_access_token";
 const REFRESH_TOKEN_KEY = "skinai_refresh_token";
 
-function getStoredTokens(): AuthTokens | null {
+export function getStoredTokens(): AuthTokens | null {
   if (typeof window === "undefined") return null;
   const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);

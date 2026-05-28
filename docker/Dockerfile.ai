@@ -4,10 +4,19 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+# torch/torchvision 먼저 설치 (가장 무거운 패키지 — 단독 설치로 피크 메모리 분산)
+RUN pip install --no-cache-dir torch torchvision \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# 나머지 패키지 설치
+RUN pip install --no-cache-dir fastapi uvicorn python-multipart Pillow
+
+# ultralytics 설치 후 headless opencv로 교체
+RUN pip install --no-cache-dir ultralytics \
+    && pip install --no-cache-dir --force-reinstall opencv-python-headless
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8001
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

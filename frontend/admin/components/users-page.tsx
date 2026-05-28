@@ -135,6 +135,7 @@ export function UsersPage() {
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         {/* 사용자 추가 및 내보내기 버튼 제거됨 */}
+        {/* 사용자 추가 및 내보내기 버튼 제거됨 */}
       </div>
 
       {/* Filters */}
@@ -224,7 +225,7 @@ export function UsersPage() {
               >
                 이전
               </button>
-              
+
               {Array.from({ length: Math.ceil(pagination.total / pagination.pageSize) }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
@@ -238,7 +239,7 @@ export function UsersPage() {
                   {page}
                 </button>
               ))}
-              
+
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === Math.ceil(pagination.total / pagination.pageSize)}

@@ -7,6 +7,18 @@
 
 ## 실행 (한 줄)
 
+네이버 병원 검색을 사용하려면 실행 전에 루트 `.env`에 네이버 개발자센터 검색 API 키를 넣습니다.
+
+```env
+NAVER_SEARCH_CLIENT_ID=발급받은_Client_ID
+NAVER_SEARCH_CLIENT_SECRET=발급받은_Client_Secret
+NAVER_HOSPITAL_SEARCH_KEYWORD=피부과
+NAVER_HOSPITAL_SEARCH_DISPLAY=5
+```
+
+`docker compose up`으로 실행하면 루트 `.env`를 읽습니다. `backend/hospital-service`만 단독으로
+실행할 때는 `backend/hospital-service/.env`에 같은 값을 넣습니다.
+
 ```bash
 docker compose up --build
 ```

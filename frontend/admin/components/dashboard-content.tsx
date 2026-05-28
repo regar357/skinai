@@ -1,7 +1,7 @@
-import { Users, UserCheck, BarChart3, Calendar } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { dashboardApi } from "@/src/api/dashboard"
-import { useState, useEffect } from "react"
+import { Users, UserCheck, BarChart3, Calendar } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { dashboardApi } from "@/src/api/dashboard";
+import { useState, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -15,8 +15,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
-} from "recharts"
+  Legend,
+} from "recharts";
 
 const stats = [
   {
@@ -47,35 +47,35 @@ const stats = [
     iconBg: "bg-orange-50",
     iconColor: "text-orange-500",
   },
-]
+];
 
 const diagnosisData = [
   { month: "1월", value: 120, percentage: 60 },
   { month: "2월", value: 150, percentage: 75 },
   { month: "3월", value: 180, percentage: 90 },
   { month: "4월", value: 200, percentage: 100 },
-]
+];
 
 const diseaseData = [
   { name: "기저세포암", value: 45, percentage: 28 },
   { name: "편평세포암", value: 32, percentage: 20 },
   { name: "흑색종", value: 28, percentage: 18 },
   { name: "양성 종양", value: 65, percentage: 34 },
-]
+];
 
 const userTrendData = [
   { month: "1월", active: 45, new: 50 },
   { month: "2월", active: 60, new: 65 },
   { month: "3월", active: 65, new: 70 },
   { month: "4월", active: 50, new: 55 },
-]
+];
 
 // Mock data for fallback
 const mockStats = {
   totalUsers: 1234,
   activeUsers: 892,
   totalAnalyses: 5678,
-  todayAnalyses: 45
+  todayAnalyses: 45,
 };
 
 const mockDiagnosisTrend = [
@@ -102,7 +102,9 @@ const mockUserTrend = [
 export function DashboardContent() {
   const [stats, setStats] = useState(mockStats);
   const [diagnosisTrend, setDiagnosisTrend] = useState(mockDiagnosisTrend);
-  const [diseaseDistribution, setDiseaseDistribution] = useState(mockDiseaseDistribution);
+  const [diseaseDistribution, setDiseaseDistribution] = useState(
+    mockDiseaseDistribution,
+  );
   const [userTrend, setUserTrend] = useState(mockUserTrend);
   const [loading, setLoading] = useState(false);
 
@@ -110,13 +112,15 @@ export function DashboardContent() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const [statsRes, diagnosisRes, diseaseRes, userRes] = await Promise.all([
-          dashboardApi.getStats(),
-          dashboardApi.getDiagnosisTrend(),
-          dashboardApi.getDiseaseDistribution(),
-          dashboardApi.getUserTrend()
-        ]);
-        
+        const [statsRes, diagnosisRes, diseaseRes, userRes] = await Promise.all(
+          [
+            dashboardApi.getStats(),
+            dashboardApi.getDiagnosisTrend(),
+            dashboardApi.getDiseaseDistribution(),
+            dashboardApi.getUserTrend(),
+          ],
+        );
+
         setStats(statsRes.data ?? mockStats);
         setDiagnosisTrend(diagnosisRes.data ?? mockDiagnosisTrend);
         setDiseaseDistribution(diseaseRes.data ?? mockDiseaseDistribution);
@@ -172,7 +176,9 @@ export function DashboardContent() {
           <Card key={stat.label} className="border-gray-200 bg-white">
             <CardContent className="flex items-center justify-between p-6">
               <div>
-                <p className="text-base font-semibold text-gray-700">{stat.label}</p>
+                <p className="text-base font-semibold text-gray-700">
+                  {stat.label}
+                </p>
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
               </div>
               <div
@@ -198,21 +204,25 @@ export function DashboardContent() {
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={diagnosisTrend}>
                 <defs>
-                  <linearGradient id="colorDiagnosis" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <linearGradient
+                    id="colorDiagnosis"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" stroke="#888" />
                 <YAxis stroke="#888" />
-                <Tooltip 
-                  formatter={(value) => [`${value}건`, '진단 건수']}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#3b82f6" 
+                <Tooltip formatter={(value) => [`${value}건`, "진단 건수"]} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#3b82f6"
                   strokeWidth={2}
                   fill="url(#colorDiagnosis)"
                   dot={{ fill: "#3b82f6", r: 4 }}
@@ -245,25 +255,33 @@ export function DashboardContent() {
                   isAnimationActive={false}
                 >
                   {diseaseDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={`hsl(${142 + index * 15}, 70%, ${45 + index * 5}%)`} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={`hsl(${142 + index * 15}, 70%, ${45 + index * 5}%)`}
+                    />
                   ))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value, name) => [`${value}건`, name]}
-                />
+                <Tooltip formatter={(value, name) => [`${value}건`, name]} />
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {diseaseDistribution.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between text-xs"
+                >
                   <div className="flex items-center gap-1">
-                    <div 
-                      className="w-2 h-2 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: `hsl(${142 + index * 15}, 70%, ${45 + index * 5}%)` }}
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: `hsl(${142 + index * 15}, 70%, ${45 + index * 5}%)`,
+                      }}
                     />
                     <span className="text-gray-600 truncate">{item.name}</span>
                   </div>
-                  <span className="font-medium text-gray-700 ml-1">{item.percentage}%</span>
+                  <span className="font-medium text-gray-700 ml-1">
+                    {item.percentage}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -295,19 +313,29 @@ export function DashboardContent() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" stroke="#888" />
                 <YAxis stroke="#888" />
-                <Tooltip 
+                <Tooltip
                   formatter={(value, name) => [
-                    `${value}명`, 
-                    name === 'active' ? '활성 사용자' : '신규 사용자'
+                    `${value}명`,
+                    name === "active" ? "활성 사용자" : "신규 사용자",
                   ]}
                 />
-                <Bar dataKey="active" fill="#3b82f6" radius={[2, 2, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="new" fill="#4ade80" radius={[2, 2, 0, 0]} isAnimationActive={false} />
+                <Bar
+                  dataKey="active"
+                  fill="#3b82f6"
+                  radius={[2, 2, 0, 0]}
+                  isAnimationActive={false}
+                />
+                <Bar
+                  dataKey="new"
+                  fill="#4ade80"
+                  radius={[2, 2, 0, 0]}
+                  isAnimationActive={false}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

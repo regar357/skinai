@@ -21,4 +21,4 @@ CREATE TABLE IF NOT EXISTS auth (
 -- 초기 관리자 계정 seed (비밀번호: Admin1234!)
 -- bcrypt hash of 'Admin1234!' with 10 rounds
 INSERT IGNORE INTO auth (user_id, email, password, name, role)
-VALUES (0, 'admin@skinai.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '관리자', 'admin');
+VALUES (0, 'admin@skinai.com', '$2b$10$p.3IqvuxaXiayDy0HsY.WeA2nRdNp5fmhMN5H98kTd3Dlpgckun7q', 'admin', 'admin');

@@ -34,7 +34,7 @@ services:
     image: mysql:8.0
     container_name: skinai-mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "1234"
     volumes:
@@ -112,6 +112,7 @@ services:
       <<: [*jwt-env, *db-env]
       PORT: 3003
       USER_DB_NAME: skinai_user
+      AUTH_SERVICE_URL: http://auth-service:3002
     depends_on:
       mysql:
         condition: service_healthy
@@ -169,6 +170,10 @@ services:
       HOSPITAL_DB_NAME: skinai_hospital
       NAVER_MAP_CLIENT_ID: ${NAVER_MAP_CLIENT_ID:-}
       NAVER_MAP_CLIENT_SECRET: ${NAVER_MAP_CLIENT_SECRET:-}
+      NAVER_SEARCH_CLIENT_ID: ${NAVER_SEARCH_CLIENT_ID:-}
+      NAVER_SEARCH_CLIENT_SECRET: ${NAVER_SEARCH_CLIENT_SECRET:-}
+      NAVER_HOSPITAL_SEARCH_KEYWORD: ${NAVER_HOSPITAL_SEARCH_KEYWORD:-피부과}
+      NAVER_HOSPITAL_SEARCH_DISPLAY: ${NAVER_HOSPITAL_SEARCH_DISPLAY:-5}
     depends_on:
       mysql:
         condition: service_healthy
@@ -203,9 +208,8 @@ services:
     ports:
       - "3008:3008"
     environment:
-      <<: [*jwt-env, *db-env]
+      <<: *jwt-env
       PORT: 3008
-      ADMIN_DB_NAME: skinai_admin
       AUTH_SERVICE_URL: http://auth-service:3002
       USER_SERVICE_URL: http://user-service:3003
       DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
@@ -232,12 +236,13 @@ services:
       MONITORING_DB_NAME: skinai_monitoring
       DIAGNOSIS_SERVICE_URL: http://diagnosis-service:3004
       USER_SERVICE_URL: http://user-service:3003
+      AI_SERVICE_URL: http://ai:8001
     depends_on:
       mysql:
         condition: service_healthy
 
   # ────────────────────────────────────────────
-  # 9. AI 진단 서버 (8001) - 옵셔널
+  # 9. AI 진단 서버 (8001)
   # ────────────────────────────────────────────
   ai:
     build:
@@ -246,6 +251,8 @@ services:
     container_name: skinai-ai
     ports:
       - "8001:8001"
+    volumes:
+      - ./ai/model:/app/model:ro
 
   # ────────────────────────────────────────────
   # 모바일 프론트엔드 (3000)

@@ -24,12 +24,23 @@ class HospitalService {
     size = 3,
     radius = 5000,
     keyword,
+    address,
   }) {
     Hospital.validateCoordinates(latitude, longitude);
 
-    // TODO: 네이버 지도 API 연동
+    await this.syncHospitalsFromNaver({
+      latitude,
+      longitude,
+      address,
+      keyword,
+    });
+
     // - Redis 캐싱으로 자주 검색되는 지역 결과 캐싱 (비용 절감)
     // - 요청 횟수 제한 (Rate Limiting)
+    //네이버 api 요청을 해서 주소정보를 받아오는 것
+    //주소 데이터를 사용을 해서 네이버 검색 api 요청을 해서 병원 정보를 응답으로 받아오는 것
+    //병원 정보를 가공을 해서 db에 저장함
+    //db정보를 프론트에 전달하는 것
     const all = await this.hospitalRepository.findNearby(
       latitude,
       longitude,
@@ -54,6 +65,38 @@ class HospitalService {
       hospitals: hospitals.map((hospital) => this.toListItem(hospital)),
       pagination: { page, size, total, totalPages: Math.ceil(total / size) },
     };
+  }
+
+  async syncHospitalsFromNaver({ latitude, longitude, address, keyword }) {
+    if (!this.naverMapClient?.searchEnabled) {
+      return;
+    }
+
+    try {
+      const searchAddress =
+        address || (await this.reverseGeocode({ latitude, longitude })).address;
+      if (!searchAddress || searchAddress === "현재 위치") {
+        return;
+      }
+
+      const hospitals = await this.naverMapClient.searchLocalHospitals({
+        address: searchAddress,
+        keyword:
+          keyword || process.env.NAVER_HOSPITAL_SEARCH_KEYWORD || "피부과",
+        display: Number(process.env.NAVER_HOSPITAL_SEARCH_DISPLAY || 5),
+      });
+
+      if (hospitals.length) {
+        await this.hospitalRepository.upsertMany(
+          hospitals.map((hospital) => new Hospital(hospital)),
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "[hospital-service] Naver hospital sync skipped:",
+        error.message,
+      );
+    }
   }
 
   async reverseGeocode({ latitude, longitude }) {
@@ -93,7 +136,10 @@ class HospitalService {
       address: hospital.address,
       phone: hospital.phone,
       hours: this.formatOpenHours(hospital.open_hours),
-      rating: Number(hospital.rating || 0),
+      rating:
+        hospital.rating === undefined || hospital.rating === null
+          ? null
+          : Number(hospital.rating),
       distanceKm: Number((distanceMeters / 1000).toFixed(1)),
       isOpen: true,
       latitude,
@@ -107,7 +153,7 @@ class HospitalService {
     if (typeof openHours === "string") {
       try {
         const parsed = JSON.parse(openHours);
-        return parsed.label || parsed.weekday || openHours;
+        return parsed?.label || parsed?.weekday || "영업시간 정보 없음";
       } catch {
         return openHours;
       }
@@ -117,7 +163,7 @@ class HospitalService {
 
   createNaverMapUrl(hospital) {
     return `https://map.naver.com/p/search/${encodeURIComponent(
-      `${hospital.name} ${hospital.address}`,
+      hospital.name,
     )}`;
   }
 }

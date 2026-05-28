@@ -14,19 +14,22 @@ const createDiagnosisRoutes = require("./interfaces/routes/diagnosisRoutes");
 const createInternalMonitoringRoutes = require("./interfaces/routes/internalMonitoringRoutes");
 const createInternalAdminRoutes = require("./interfaces/routes/internalAdminRoutes");
 
+const storageService = require("./infrastructure/storage/StorageService");
 const diagnosisRepository = new DiagnosisRepositoryImpl(pool);
 const diagnosisService = new DiagnosisService(diagnosisRepository);
-const diagnosisController = new DiagnosisController(diagnosisService);
+const diagnosisController = new DiagnosisController(diagnosisService, storageService);
 const internalMonitoringService = new InternalMonitoringService(pool);
 const internalMonitoringController = new InternalMonitoringController(internalMonitoringService);
-const internalAdminService = new InternalAdminService(pool);
+const internalAdminService = new InternalAdminService(pool, storageService);
 const internalAdminController = new InternalAdminController(internalAdminService);
 
 const app = express();
 const port = process.env.PORT || 3004;
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static(require("path").join(__dirname, "uploads")));
+if (process.env.NODE_ENV !== "production") {
+  app.use("/uploads", express.static(require("path").join(__dirname, "uploads")));
+}
 
 app.get("/health", (req, res) => {
   res.json({

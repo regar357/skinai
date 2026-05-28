@@ -66,6 +66,14 @@ class UserRepositoryImpl extends UserRepository {
     );
     return result.affectedRows > 0;
   }
+
+  /** 마지막 로그인 시각 업데이트 */
+  async updateLastLoginAt(userId) {
+    await this.pool.execute(
+      "UPDATE users SET last_login_at = NOW(), updated_at = NOW() WHERE user_id = ?",
+      [userId],
+    );
+  }
 }
 
 module.exports = UserRepositoryImpl;

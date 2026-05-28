@@ -134,12 +134,14 @@ app.use("/api/v1/encyclopedia", contentAccess);
 app.use("/api/v1/diseases", contentAccess);
 app.use("/api/v1/content", contentAccess);
 
-// hospitals: 인증
-app.use(
-  "/api/v1/hospitals",
-  authenticate,
-  buildProxy(TARGETS.hospital, "hospital"),
-);
+// hospitals: 조회(GET)는 optionalAuth, 나머지는 인증 필수
+const hospitalProxy = buildProxy(TARGETS.hospital, "hospital");
+app.use("/api/v1/hospitals", (req, res, next) => {
+  if (req.method === "GET") {
+    return optionalAuth(req, res, () => hospitalProxy(req, res, next));
+  }
+  return authenticate(req, res, () => hospitalProxy(req, res, next));
+});
 
 // feedback: 인증
 app.use(

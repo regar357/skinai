@@ -11,7 +11,6 @@ src/
 │   ├── auth.ts           # 인증 및 사용자 관리
 │   ├── images.ts         # 이미지 관리
 │   ├── analysis.ts       # AI 분석 결과 관리
-│   ├── shares.ts         # 공유 링크 관리
 │   ├── feedbacks.ts      # 피드백 관리
 │   ├── content.ts        # 콘텐츠 관리 (백과, 공지, 병원)
 │   ├── admin.ts          # Admin 전용 기능
@@ -110,14 +109,6 @@ const diseaseStats = await adminApi.analyses.getDiseaseStats();
   - `getById()`: 분석 결과 상세
   - `getStats()`: 분석 통계
   - `getDailyStats()`: 일별 통계
-
-### shares.ts
-- **기능**: 공유 링크 관리
-- **주요 메소드**:
-  - `create()`: 공유 링크 생성
-  - `getByToken()`: 토큰으로 공유 정보 조회
-  - `getUserShares()`: 사용자별 공유 링크
-  - `getStats()`: 공유 통계
 
 ### feedbacks.ts
 - **기능**: 피드백 관리
@@ -218,6 +209,6 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
 - ✅ 인증 및 사용자 관리 (`/api/auth/*`, `/api/users/*`)
 - ✅ 이미지 관리 (`/api/images/*`)
 - ✅ AI 분석 (`/api/analysis/*`)
-- ✅ 공유 및 피드백 (`/api/shares/*`, `/api/feedbacks/*`)
+- ✅ 피드백 (`/api/feedbacks/*`)
 - ✅ 콘텐츠 관리 (`/api/diseases/*`, `/api/notices/*`, `/api/hospitals/*`)
 - ➕ Admin 전용 기능 (`/api/admin/*`)

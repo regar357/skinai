@@ -221,14 +221,24 @@ export const hospitalService = {
     sort?: "distance" | "rating";
     page?: number;
     size?: number;
+    address?: string;
   }) {
-    const { lat, lng, sort = "distance", page = 1, size = 3 } = params;
+    const { lat, lng, sort = "distance", page = 1, size = 3, address } = params;
+    const searchParams = new URLSearchParams({
+      lat: String(lat),
+      lng: String(lng),
+      sort,
+      page: String(page),
+      size: String(size),
+    });
+
+    if (address) {
+      searchParams.set("address", address);
+    }
 
     const response = await apiRequest<
       PaginatedResponse<HospitalItem> | ApiEnvelope<HospitalItem[]>
-    >(
-      `/hospitals/nearby?lat=${lat}&lng=${lng}&sort=${sort}&page=${page}&size=${size}`,
-    );
+    >(`/hospitals/nearby?${searchParams.toString()}`);
 
     if ("items" in response) {
       return response;
