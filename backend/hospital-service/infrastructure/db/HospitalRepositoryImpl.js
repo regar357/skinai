@@ -25,9 +25,11 @@ class HospitalRepositoryImpl extends HospitalRepository {
     let query = `
       SELECT *, (
         6371000 * acos(
-          cos(radians(?)) * cos(radians(latitude)) *
-          cos(radians(longitude) - radians(?)) +
-          sin(radians(?)) * sin(radians(latitude))
+          LEAST(1.0,
+            cos(radians(?)) * cos(radians(latitude)) *
+            cos(radians(longitude) - radians(?)) +
+            sin(radians(?)) * sin(radians(latitude))
+          )
         )
       ) AS distance
       FROM hospitals
