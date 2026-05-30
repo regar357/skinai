@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapPin,
   Phone,
@@ -90,6 +90,7 @@ export function HospitalFinderPage() {
     useState<LocationPoint>(DEFAULT_LOCATION);
   const [locationLabel, setLocationLabel] = useState("내 위치 확인 중...");
   const [locationReady, setLocationReady] = useState(false);
+  const addressRef = useRef<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -112,7 +113,9 @@ export function HospitalFinderPage() {
             nextLocation.lat,
             nextLocation.lng,
           );
-          setLocationLabel(result.address || "현재 위치");
+          const label = result.address || "현재 위치";
+          addressRef.current = label !== "현재 위치" ? label : undefined;
+          setLocationLabel(label);
         } catch {
           setLocationLabel("현재 위치");
         } finally {
@@ -125,13 +128,16 @@ export function HospitalFinderPage() {
         if (ipLoc) {
           try {
             const result = await hospitalService.reverseGeocode(ipLoc.lat, ipLoc.lng);
-            setLocationLabel(result.address || "현재 위치");
+            const label = result.address || "현재 위치";
+            addressRef.current = label !== "현재 위치" ? label : undefined;
+            setLocationLabel(label);
           } catch {
             setLocationLabel("현재 위치");
           } finally {
             setCurrentLocation(ipLoc);
           }
         } else {
+          addressRef.current = "서울시 강남구";
           setLocationLabel("서울시 강남구");
         }
         setLocationReady(true);
@@ -154,7 +160,7 @@ export function HospitalFinderPage() {
           sort: sortBy,
           page: currentPage,
           size: itemsPerPage,
-          address: locationLabel === "내 위치 확인 중..." ? undefined : locationLabel,
+          address: addressRef.current,
         });
         const mapped = response.items.map((item) => ({
           id: item.id,
@@ -180,7 +186,7 @@ export function HospitalFinderPage() {
       }
     };
     void loadHospitals();
-  }, [sortBy, currentPage, currentLocation, locationLabel, locationReady]);
+  }, [sortBy, currentPage, currentLocation, locationReady]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
 
