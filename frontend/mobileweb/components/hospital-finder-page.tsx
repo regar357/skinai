@@ -60,31 +60,28 @@ function isMobileDevice() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-function getMapUrl(hospital: HospitalCard, origin: LocationPoint) {
+function getMapUrl(hospital: HospitalCard) {
   if (hospital.latitude && hospital.longitude) {
-    const slat = origin.lat;
-    const slng = origin.lng;
     const dlat = hospital.latitude;
     const dlng = hospital.longitude;
-    const sname = encodeURIComponent("현재 위치");
     const dname = encodeURIComponent(hospital.name);
+    const webFallback = encodeURIComponent(
+      `https://map.naver.com/p/search/${encodeURIComponent(hospital.name)}`,
+    );
 
-    // 모바일: 네이버 지도 앱 딥링크 → 길찾기 패널이 바로 열림
     if (typeof navigator !== "undefined" && isMobileDevice()) {
-      const webFallback = encodeURIComponent(
-        `https://map.naver.com/p/search/${encodeURIComponent(hospital.name)}`,
-      );
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
       if (isIOS) {
-        return `nmap://route/car?slng=${slng}&slat=${slat}&sname=${sname}&dlng=${dlng}&dlat=${dlat}&dname=${dname}&appname=skinai`;
+        // 도착지만 지정 → 앱이 병원 마커 표시 + 도착지 입력란 자동 채움
+        return `nmap://route/car?dlng=${dlng}&dlat=${dlat}&dname=${dname}&appname=skinai`;
       }
       // Android: 앱 미설치 시 browser_fallback_url 로 자동 이동
-      return `intent://route/car?slng=${slng}&slat=${slat}&sname=${sname}&dlng=${dlng}&dlat=${dlat}&dname=${dname}&appname=skinai#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;S.browser_fallback_url=${webFallback};end`;
+      return `intent://route/car?dlng=${dlng}&dlat=${dlat}&dname=${dname}&appname=skinai#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;S.browser_fallback_url=${webFallback};end`;
     }
 
-    // 데스크탑: 네이버 지도 웹
-    return `https://map.naver.com/p/directions/${slng},${slat},${sname},,/${dlng},${dlat},${dname},,/car`;
+    // 데스크탑: 도착지만 지정한 네이버 지도 웹
+    return `https://map.naver.com/p/directions/-,,,/${dlng},${dlat},${dname},,/car`;
   }
 
   return (
@@ -366,7 +363,7 @@ export function HospitalFinderPage() {
                   {hospital.phone ? "전화하기" : "전화번호 확인"}
                 </a>
                 <a
-                  href={getMapUrl(hospital, currentLocation)}
+                  href={getMapUrl(hospital)}
                   aria-label={`${hospital.name} 길찾기`}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98]"
                 >
