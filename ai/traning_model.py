@@ -1,5 +1,7 @@
 import os
+import glob
 from ultralytics import YOLO
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 def main():
     # 1. 경로 설정 
@@ -44,11 +46,35 @@ def main():
         data=data_path, 
         split='test'  
     )
+    
+    test_dir = os.path.join(data_path, 'test')
+    y_true = []
+    y_pred = []
 
+    # test 폴더 내의 이미지들을 돌면서 정답과 예측값 비교
+    for class_name in os.listdir(test_dir):
+        class_dir = os.path.join(test_dir, class_name)
+        if not os.path.isdir(class_dir): 
+            continue
+
+        for img_path in glob.glob(os.path.join(class_dir, "*.png")) + glob.glob(os.path.join(class_dir, "*.jpg")):
+            res = model(img_path, verbose=False) 
+            pred_class = res[0].names[res[0].probs.top1]
+            y_true.append(class_name)
+            y_pred.append(pred_class)
+
+    # Macro 지표 계산
+    macro_precision = precision_score(y_true, y_pred, average='macro', zero_division=0)
+    macro_recall = recall_score(y_true, y_pred, average='macro', zero_division=0)
+    macro_f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
+    
     print("\nTest 데이터셋 최종 평가 완료")
     print(f"최종 Top-1 정확도: {test_metrics.top1 * 100:.2f}%")
     print(f"최종 Top-5 정확도: {test_metrics.top5 * 100:.2f}%")
-
+    print(f"Macro Precision (정밀도) : {macro_precision:.4f} ({macro_precision * 100:.2f}%)")
+    print(f"Macro Recall    (재현율) : {macro_recall:.4f} ({macro_recall * 100:.2f}%)")
+    print(f"Macro F1-Score  (조화평균): {macro_f1:.4f} ({macro_f1 * 100:.2f}%)")
+    
 # 윈도우 환경에서 PyTorch/YOLO 멀티프로세싱 에러를 막기 위한 코드
 if __name__ == '__main__':
     main()
