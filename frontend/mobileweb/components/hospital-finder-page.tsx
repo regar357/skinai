@@ -69,11 +69,9 @@ function getMapUrl(hospital: HospitalCard, origin: LocationPoint) {
     const sname = encodeURIComponent("현재위치");
     const dname = encodeURIComponent(hospital.name);
 
-    // 출발지-도착지 중간점을 지도 초기 중심으로 설정 (없으면 길찾기 패널이 뜨지 않음)
-    const clng = ((origin.lng + Number(hospital.longitude)) / 2).toFixed(5);
-    const clat = ((origin.lat + Number(hospital.latitude)) / 2).toFixed(5);
-
-    return `https://map.naver.com/p/directions/${slng},${slat},${sname},,/${dlng},${dlat},${dname},,/car?c=${clng},${clat},13,0,0,0,dh`;
+    // /car/-/-/-/car : 5개 세그먼트, 마지막이 현재 선택된 이동수단 탭
+    // ?c=13,0,0,0,dh : 줌레벨만 지정 (좌표 없음)
+    return `https://map.naver.com/p/directions/${slng},${slat},${sname},,/${dlng},${dlat},${dname},,/car/-/-/-/car?c=13,0,0,0,dh`;
   }
 
   return (
