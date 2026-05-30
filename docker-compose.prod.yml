@@ -24,9 +24,11 @@ services:
     container_name: skinai-nginx
     ports:
       - "80:80"
+      - "443:443"
       - "3010:3010"
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - mobileweb
       - admin-web
