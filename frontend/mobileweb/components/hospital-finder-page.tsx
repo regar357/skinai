@@ -60,28 +60,15 @@ function isMobileDevice() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-function getMapUrl(hospital: HospitalCard) {
+function getMapUrl(hospital: HospitalCard, origin: LocationPoint) {
   if (hospital.latitude && hospital.longitude) {
-    const dlat = hospital.latitude;
-    const dlng = hospital.longitude;
+    const slng = origin.lng.toFixed(7);
+    const slat = origin.lat.toFixed(7);
+    const dlng = Number(hospital.longitude).toFixed(7);
+    const dlat = Number(hospital.latitude).toFixed(7);
+    const sname = encodeURIComponent("현재위치");
     const dname = encodeURIComponent(hospital.name);
-    const webFallback = encodeURIComponent(
-      `https://map.naver.com/p/search/${encodeURIComponent(hospital.name)}`,
-    );
-
-    if (typeof navigator !== "undefined" && isMobileDevice()) {
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      if (isIOS) {
-        // 도착지만 지정 → 앱이 병원 마커 표시 + 도착지 입력란 자동 채움
-        return `nmap://route/car?dlng=${dlng}&dlat=${dlat}&dname=${dname}&appname=skinai`;
-      }
-      // Android: 앱 미설치 시 browser_fallback_url 로 자동 이동
-      return `intent://route/car?dlng=${dlng}&dlat=${dlat}&dname=${dname}&appname=skinai#Intent;scheme=nmap;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.nhn.android.nmap;S.browser_fallback_url=${webFallback};end`;
-    }
-
-    // 데스크탑: 도착지만 지정한 네이버 지도 웹
-    return `https://map.naver.com/p/directions/-,,,/${dlng},${dlat},${dname},,/car`;
+    return `https://map.naver.com/p/directions/${slng},${slat},${sname},,/${dlng},${dlat},${dname},,/car`;
   }
 
   return (
@@ -363,7 +350,9 @@ export function HospitalFinderPage() {
                   {hospital.phone ? "전화하기" : "전화번호 확인"}
                 </a>
                 <a
-                  href={getMapUrl(hospital)}
+                  href={getMapUrl(hospital, currentLocation)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={`${hospital.name} 길찾기`}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-foreground shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98]"
                 >
