@@ -62,13 +62,18 @@ function isMobileDevice() {
 
 function getMapUrl(hospital: HospitalCard, origin: LocationPoint) {
   if (hospital.latitude && hospital.longitude) {
-    const slng = origin.lng.toFixed(7);
-    const slat = origin.lat.toFixed(7);
-    const dlng = Number(hospital.longitude).toFixed(7);
-    const dlat = Number(hospital.latitude).toFixed(7);
+    const slng = origin.lng.toFixed(5);
+    const slat = origin.lat.toFixed(5);
+    const dlng = Number(hospital.longitude).toFixed(5);
+    const dlat = Number(hospital.latitude).toFixed(5);
     const sname = encodeURIComponent("현재위치");
     const dname = encodeURIComponent(hospital.name);
-    return `https://map.naver.com/p/directions/${slng},${slat},${sname},,/${dlng},${dlat},${dname},,/car`;
+
+    // 출발지-도착지 중간점을 지도 초기 중심으로 설정 (없으면 길찾기 패널이 뜨지 않음)
+    const clng = ((origin.lng + Number(hospital.longitude)) / 2).toFixed(5);
+    const clat = ((origin.lat + Number(hospital.latitude)) / 2).toFixed(5);
+
+    return `https://map.naver.com/p/directions/${slng},${slat},${sname},,/${dlng},${dlat},${dname},,/car?c=${clng},${clat},13,0,0,0,dh`;
   }
 
   return (
