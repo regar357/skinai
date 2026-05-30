@@ -85,25 +85,41 @@ class NaverMapClient {
       return [];
     }
 
-    const url = new URL("https://openapi.naver.com/v1/search/local.json");
-    url.searchParams.set("query", `${address} ${keyword}`.trim());
-    url.searchParams.set("display", String(Math.min(Math.max(display, 1), 5)));
-    url.searchParams.set("start", "1");
-    url.searchParams.set("sort", "comment");
+    // 전체 주소(도로명 포함) 대신 구(gu) 단위까지만 사용 — 검색 범위가 너무 좁아지는 문제 방지
+    const parts = address.trim().split(/\s+/);
+    const searchAddress = parts.slice(0, 2).join(" "); // "서울특별시 강남구"
 
-    const response = await fetch(url, {
-      headers: {
-        "X-Naver-Client-Id": this.searchClientId,
-        "X-Naver-Client-Secret": this.searchClientSecret,
-      },
-    });
+    const pageSize = Math.min(Math.max(display, 1), 5);
 
-    if (!response.ok) {
-      throw new Error(`Naver Local Search failed: ${response.status}`);
-    }
+    const fetchPage = async (start) => {
+      const url = new URL("https://openapi.naver.com/v1/search/local.json");
+      url.searchParams.set("query", `${searchAddress} ${keyword}`.trim());
+      url.searchParams.set("display", String(pageSize));
+      url.searchParams.set("start", String(start));
+      url.searchParams.set("sort", "comment");
 
-    const data = await response.json();
-    return (data.items || [])
+      const response = await fetch(url, {
+        headers: {
+          "X-Naver-Client-Id": this.searchClientId,
+          "X-Naver-Client-Secret": this.searchClientSecret,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Naver Local Search failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.items || [];
+    };
+
+    // 2페이지 병렬 조회로 최대 10개 병원 확보 → findNearby 에서 가장 가까운 병원 선택
+    const results = await Promise.allSettled([fetchPage(1), fetchPage(1 + pageSize)]);
+    const allItems = results
+      .filter((r) => r.status === "fulfilled")
+      .flatMap((r) => r.value);
+
+    return allItems
       .filter((item) => this.isHospitalResult(item))
       .map((item) => this.toHospital(item))
       .filter(Boolean);
