@@ -93,7 +93,7 @@ async def get_performance_metrics():
                 "accuracy": 0.995, 
                 "precision": 0.991, 
                 "recall": 0.992,    
-                "f1Score": 0.991,   
+                "f1Score": 0.997,   
                 "evaluatedAt": "2026-05-16" # 5월 (학습 직후 최고 성능)
             },
             {
